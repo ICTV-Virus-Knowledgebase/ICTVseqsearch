@@ -88,7 +88,11 @@ def load_VMR_data():
     # it finds every row where 'E' is in column 'Exemplar or additional isolate' and returns 
     # only the columns specified. 
     #vmr_data = truncated_vmr_data.loc[truncated_vmr_data['Exemplar or additional isolate']==args.ea.upper(),['Sort','Isolate Sort','Species','Virus GENBANK accession',"Genome coverage","Genus"]]
-    vmr_data = raw_vmr_data.loc[raw_vmr_data['Exemplar or additional isolate']==args.ea.upper(),vmr_cols_needed[1:]]
+    if args.ea.upper() == 'A' or args.ea.upper() == 'E': 
+        vmr_data = raw_vmr_data.loc[raw_vmr_data['Exemplar or additional isolate']==args.ea.upper(),vmr_cols_needed]
+    elif args.ea.upper() == 'B':
+        # both e and a
+        vmr_data = raw_vmr_data.loc[raw_vmr_data['Exemplar or additional isolate']!='',vmr_cols_needed]
 
     # only works when I reload the vmr_data, probably not necessary. have to look into why it's doing this. 
     if args.verbose: print("Writing"+VMR_hack_file_name,": workaround - filters VMR down to "+args.ea.upper()+" records only")
@@ -100,13 +104,9 @@ def load_VMR_data():
     if args.verbose: print("   Read {0} rows, {1} columns.".format(*narrow_vmr_data.shape))
     if args.verbose: print("   columns:", list(narrow_vmr_data.columns))
 
-    # Removing Genome Coverage column from the returned value. 
-    truncated_vmr_data = narrow_vmr_data[vmr_cols_needed[1:]]
+    if args.verbose: print("   Truncated: {0} rows, {1} columns.".format(*narrow_vmr_data.shape))
     
-    #truncated_vmr_data = truncated_vmr_data.drop(columns=['Exemplar or additional isolate'])
-    if args.verbose: print("   Truncated: {0} rows, {1} columns.".format(*truncated_vmr_data.shape))
-    
-    return truncated_vmr_data
+    return narrow_vmr_data
 
 
 def test_accession_IDs(df):
@@ -120,11 +120,13 @@ def test_accession_IDs(df):
 # 4. Accession Numbers in the same block are seperated by a ; or a , or a :
 ##############################################################################################################
     # defining new DataFrame before hand
-    processed_accession_IDs = pandas.DataFrame(columns=['Species','Accession_IDs','segment',"Genus","Sort","Isolate Sort","Original_Accession_String","Errors"])
+    processed_accession_IDs = pandas.DataFrame(columns=['Species','Exemplar_Additional','Accession_IDs','segment',"Genus","Sort","Isolate Sort","Original_Accession_String","Errors"])
     # for loop for every entry in given processed_accessionIDs
     for entry_count in range(0,len(df.index)):
         # Find current species in this row
         Species=df['Species'][entry_count]
+        # Exemplar/Additional designation
+        Exemplar_Additional=df['Exemplar or additional isolate'][entry_count]
         # Find current Genus in this row
         Genus=df['Genus'][entry_count]
         #initial processing of raw accession numbers.
@@ -162,7 +164,7 @@ def test_accession_IDs(df):
                 #checks if current selection fits what an accession number should be
                 if len(str(accession_part)) == 8 or 6 and letter_count<3 and number_count>3:
                     processed_accession_ID = accession_part
-                    processed_accession_IDs.loc[len(processed_accession_IDs.index)] = [Species,processed_accession_ID,segment,Genus,
+                    processed_accession_IDs.loc[len(processed_accession_IDs.index)] = [Species,Exemplar_Additional,processed_accession_ID,segment,Genus,
                                                                                        df['Sort'][entry_count],
                                                                                        df['Isolate Sort'][entry_count],
                                                                                        df['Virus GENBANK accession'][entry_count],
@@ -184,8 +186,9 @@ def fetch_fasta(processed_accession_file_name):
 
     # make sure the output directory exists
     fasta_dir = "./fasta_new_vmr"
-    if args.ea == "a": 
-        fasta_dir = fasta_dir+"_a"
+    if args.ea != "e": 
+        fasta_dir = fasta_dir+"_"+args.ea.lower()
+
     if not os.path.exists(fasta_dir):
         # Create the directory if it doesn't exist
         os.makedirs(fasta_dir)

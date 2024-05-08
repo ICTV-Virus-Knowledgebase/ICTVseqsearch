@@ -3,12 +3,12 @@
 # extract GenBank accessions from VMR.xlsx into a text file
 # query NCBI for all the matching RefSeq accessions
 #
-VMR="VMR_MSL39_v1.xlsx"
-VMR_E="processed_accessions_e.tsv"
-ACC_E="processed_accessions_e_acc_only.txt"
+VMR="VMRs/VMR_MSL39_v1.xlsx"
+VMR_TSV="processed_accessions_b.tsv"
+ACC_TSV="processed_accessions_b_acc_only.txt"
 OUT_DIR="refseq"
-PREFIX="$OUT_DIR/e_genbank.txt."
-PREFIX_OUT="$OUT_DIR/e_refseq.txt."
+PREFIX="$OUT_DIR/b_genbank.txt."
+PREFIX_OUT="$OUT_DIR/b_refseq.txt."
 OUT_MAP="genbank_refseq_map.txt"
 TEST1="test_acc_list_1.txt"
 TEST10="test_acc_list_10.txt"
@@ -28,29 +28,33 @@ fi
 ##
 ## PARSE MSL, extract genbank accession list
 ##
-if [ ! $QUERY_ONLY ]; then
+if [ $QUERY_ONLY -lt 1 ]; then
     
+    echo conda activate  conda/vmr_openpyxl3
     conda activate  conda/vmr_openpyxl3
 
-    if [[ $VMR -nt $VMR_E ]]; then 
-	echo RUN ./VMR_to_fasta.py -verbose -VMR_file_name $VMR -mode VMR -ea E
-	./VMR_to_fasta.py -verbose -VMR_file_name $VMR -mode VMR -ea E
+    if [[ $VMR -nt $VMR_TSV ]]; then 
+	echo RUN ./VMR_to_fasta.py -verbose -VMR_file_name $VMR -mode VMR -ea B
+	./VMR_to_fasta.py -verbose -VMR_file_name $VMR -mode VMR -ea B
     else
-	echo "SKIP: $VMR_E up-to-date"
+	echo "SKIP: $VMR_TSV up-to-date"
     fi
-    wc -l $VMR_E
+    wc -l $VMR_TSV
 
-    # just accessions
-    cut -f 3   $VMR_E > $ACC_E
-    wc -l $ACC_E
+    # just accessions - remove ()'s
+    cut -f 4   $VMR_TSV \
+	| perl -pe 's/\([0-9.]+\)//g;' \
+	> $ACC_TSV
+    
+    wc -l $ACC_TSV
 
     # split main file into small piecees
     mkdir -p $OUT_DIR
-    split -l 100  $ACC_E $PREFIX
+    split -l 100  $ACC_TSV $PREFIX
 
     # short test files
-    head -2  $ACC_E  | grep -v Accession_IDs > $TEST1
-    head -11  $ACC_E | grep -v Accession_IDs > $TEST10
+    head -2  $ACC_TSV  | grep -v Accession_IDs > $TEST1
+    head -11  $ACC_TSV | grep -v Accession_IDs > $TEST10
 
 fi
 
@@ -98,5 +102,12 @@ done
 #
 sort -k2,2 ${PREFIX_OUT}* > $OUT_MAP
 echo "FROM $VMR"
-echo "   GENBANK: $(wc -l $VMR_E)"
+echo "   GENBANK: $(wc -l $VMR_TSV)"
 echo "   REFSEQ:  $(wc -l $OUT_MAP)"
+
+
+#merge RefSeq into VMR export
+./update_vrm_refseq.py                                                   
+
+# QC check
+ cut -f 3 processed_accessions_e.tsv | sort | uniq -c | sort -k1,1n | tail
