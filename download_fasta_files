@@ -44,5 +44,5 @@ echo ./VMR_to_fasta.py -verbose -mode VMR   -ea e -email $USER@uab.edu -VMR_file
 ./VMR_to_fasta.py -verbose -mode VMR   -ea e -email $USER@uab.edu -VMR_file_name $VMR_XLSX
 
 echo "### fetch FASTA for E###"
-echo ./VMR_to_fasta.py -verbose -mode fasta -ea e -email $USER@uab.edu -VMR_file_name processed_accessions_e.xlsx
-./VMR_to_fasta.py -verbose -mode fasta -ea e -email $USER@uab.edu -VMR_file_name processed_accessions_e.xlsx
+echo "./VMR_to_fasta.py -verbose -mode fasta -ea e -email $USER@uab.edu -VMR_file_name $VMR_XLSX"
+./VMR_to_fasta.py -verbose -mode fasta -ea e -email $USER@uab.edu -VMR_file_name $VMR_XLSX

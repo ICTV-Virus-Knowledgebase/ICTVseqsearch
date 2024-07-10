@@ -29,7 +29,7 @@ echo "# concatenate individual fasta's into all.fa"
 if [[ ! -e "$ALL_FASTA" || "$(find $SRC_DIR -newer $ALL_FASTA|wc -l)" -gt 0 ]]; then
     echo "REBUILD $ALL_FASTA"
     rm $ALL_FASTA
-    for FA in $(awk 'BEGIN{FS="\t";GENUS=5;ACC=3}(NR>1){print $GENUS"/"$ACC".raw"}' $ACCESSION_TSV); do
+    for FA in $(awk 'BEGIN{FS="\t";GENUS=5;ACC=3}(NR>1){print $GENUS"/"$ACC".fa"}' $ACCESSION_TSV); do
 	echo "cat $SRC_DIR/$FA >> $ALL_FASTA"
 	cat $SRC_DIR/$FA >> $ALL_FASTA
 	wc -l $ALL_FASTA

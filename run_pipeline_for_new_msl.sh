@@ -27,6 +27,7 @@
 # default settings / arg parsing
 # ---------------------------------------------------------------------- 
 BLAST_MODES="blastn10 blastn11 blastn13"
+BLAST_MODES="blastn10"
 echo BLAST_MODES=$BLAST_MODES
 
 # ---------------------------------------------------------------------- 
@@ -61,8 +62,8 @@ fi
 echo "#"
 echo "# download VMRs from box into ./VMRs/"
 echo "#"
-echo  ./pull_VMRs_from_box.sh
-#DB$SRUN ./pull_VMRs_from_box.sh
+echo  "#./pull_VMRs_from_box.sh"
+$SRUN ./pull_VMRs_from_box.sh
 
 echo "#"
 echo "# get most recent MSL.xlsx file"
@@ -84,14 +85,14 @@ echo "#"
 echo "# pull and format fastas"
 echo "#"
 echo "# remove formated fastas"
-echo 'find . -name "*.fa" -exec rm {} +'
-$SRUN find . -name "*.fa" -exec rm {} +
+echo '#SKIP: find . -name "*.fa" -exec rm {} +'
+#$SRUN find . -name "*.fa" -exec rm {} +
 
-echo "# downlaod and format E fastas - in serial"
-$SRUN ./download_fasta_files $VMR_XLSX
+echo "#SKIP: downlaod and format E fastas - in serial"
+#$SRUN ./download_fasta_files $VMR_XLSX
 
-echo "# downlaod and format A fastas - in serial"
-$SRUN ./download_fasta_files_a  $VMR_XLSX
+echo "#SKIP: downlaod and format A fastas - in serial"
+#$SRUN ./download_fasta_files_a  $VMR_XLSX
 
 echo "#"
 echo "# build blast db: 3-4 minutes"
@@ -109,15 +110,22 @@ echo "# wait for parallel blast jobs to complete"
 echo "squeue_email ICTV_BLAST_A_fastas_vs_E_db_ done for $0"
 $SRUN squeue_email ICTV_BLAST_A_fastas_vs_E_db_ done for $0
 
-echo "#"
-echo "# summarize results"
-echo "#"
-echo "cd results/"
-cd results/
-
 for BLAST_MODE in $BLAST_MODES; do
+
+    echo "#"
+    echo "# tabulate results"
+    echo "#"
+    echo  ./tabulate_test_results.py --blast $BLAST_MODE
+    $SRUN ./tabulate_test_results.py --blast $BLAST_MODE
+
+    echo "#"
+    echo "# summarize results"
+    echo "#"
+    echo "cd results/"
+    pushd results/
     echo "./extract_results.sh -m $BLAST_MODE -s bitscore"
     $SRUN ./extract_results.sh -m $BLAST_MODE -s bitscore
+    popd
 done
 
 echo "#" 

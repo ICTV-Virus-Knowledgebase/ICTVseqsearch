@@ -1,32 +1,44 @@
 <h1>VMR_to_BlastDB</h1>
 
-This is a tool to extract data from the Virial Metadata Resource(VMR) published by the ICTV. 
+This is a set of tools to extract data from the Virial Metadata Resource(VMR) published by the ICTV and build a	query-by-sequence database and application from it.
+
+<h2>commands</h2>
+
+ * [VMR_to_fasta.py](./VMR_to_fasta.py) - script for	processing VMR.xlsx and intermediate files
+ * [ncbi_pull_refseq.sh](./ncbi_pull_refseq.sh) - pipeline to query refseq accessions from genbank accessions
+ * [docker_build_image.sh](./docker_build_image.sh) - build Docker	image for query-by-sequence app
+ * [run_pipeline_for_new_msl.sh](./run_pipeline_for_new_msl.sh) - from xls to blast_db
 
 <h2>Requirements</h2>
 
 1. Python 3.*
-
-3. Pandas, including openpyxl. 
-
-5. Numpy
-
-7. Biopython
-
-9. A VMR excel file placed in the directory.
+2. Pandas, including openpyxl. 
+3. Numpy
+4. Biopython
+5. A VMR excel file placed in the directory ./VMRs
 
 NOTE: For Blast capabilities, a verison of BLASTDB also needs to be installed. 
 
-<h2>Usage</h3>
-  My main script is VMR_to_fasta.py. The process is broken into steps via a argument dubbed "mode". 
-  This isn't ideal, and eventually the script will infer mode based on the arguments given. 
-  
+To create conda environments:
+   * [./create_conda_env.sh](./create_conda_env.sh)
+   * [./create_conda_env_openpyxl3.sh](./create_conda_env_openpyxl3.sh)
+   * [./create_conda_env_openpyxl3_blast240.sh](./create_conda_env_openpyxl3_blast240.sh)
+
+<h2>Usage - VMR_to_fasta.py</h3>
+
+  Main script is VMR_to_fasta.py. The process is broken into steps via a argument dubbed "mode". 
+
+<h3>Parse: -mode VMR</h3>
+
   To parse the VMR and extract Accession numbers(mode:VMR):
   
-    VMR_to_fasta.py -mode VMR -VMR_file_name [PATH_TO_VMR]
+    ./VMR_to_fasta.py -mode VMR -ea [E|A|B] -VMR_file_name [PATH_TO_VMR.xlsx]
   
-  To download fasta data(mode:fasta):
+<h3>Download: -mode fasta</h3>
+
+  To download fasta data from NCBI:
   
-    python VMR_to_fasta.py -mode fasta -fasta_file_name [PATH_TO_EXCEL]
+    ./VMR_to_fasta.py -mode fasta -ea [E|A|B] -fasta_file_name [PATH_TO_EXCEL.xlsx]
     
   TODO: Fix db mode. 
 

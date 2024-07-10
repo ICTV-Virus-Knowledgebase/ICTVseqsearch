@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+#
+# VMR_to_fasta.py
+#
+# Extract accessions and lineages from VMR.xls, query NCBI, build VMR.blast_db, query VMR.blast_db
+#
+# INPUT: 
+#     -VMR_file_name VMRs/VMR_MSL39_v3.xlsx
+# ARGS: 
+#     -      
+# ITERMEDIATE FILES:
+
 import pandas
 import subprocess
 import time
@@ -30,6 +41,7 @@ if args.mode != 'fasta' and args.mode != "VMR" and args.mode != "db":
     print("Valid mode not selected. Options: VMR,fasta,db",file=sys.stderr)
 #Takes forever to import so only imports if it's going to be needed
 if args.mode == 'fasta':
+    print("Importing Entrez from Bio...")
     from Bio import Entrez
 #Catching error
 if args.mode == "db":
@@ -59,7 +71,7 @@ def load_VMR_data():
         if args.verbose: print("VMR data loaded: {0} rows, {1} columns.".format(*raw_vmr_data.shape))
 
         # list of the columns to extract from raw_vmr_data
-        vmr_cols_needed = ['Exemplar or additional isolate','Sort','Isolate Sort','Virus GENBANK accession','Species','Genome coverage','Genus']
+        vmr_cols_needed = ['Isolate ID','Exemplar or additional isolate','Sort','Isolate Sort','Virus GENBANK accession','Species','Genome coverage','Genus']
 
         for col_name in list(raw_vmr_data.columns):
             if col_name in vmr_cols_needed:
@@ -120,9 +132,11 @@ def test_accession_IDs(df):
 # 4. Accession Numbers in the same block are seperated by a ; or a , or a :
 ##############################################################################################################
     # defining new DataFrame before hand
-    processed_accession_IDs = pandas.DataFrame(columns=['Species','Exemplar_Additional','Accession_IDs','segment',"Genus","Sort","Isolate Sort","Original_Accession_String","Errors"])
+    processed_accession_IDs = pandas.DataFrame(columns=['Isolate_ID','Species','Exemplar_Additional','Accession_IDs','segment',"Genus","Sort","Isolate Sort","Original_Accession_String","Errors"])
     # for loop for every entry in given processed_accessionIDs
     for entry_count in range(0,len(df.index)):
+        # Find current isolate_id in this row (unique per row)
+        Isolate_ID=df['Isolate ID'][entry_count]
         # Find current species in this row
         Species=df['Species'][entry_count]
         # Exemplar/Additional designation
@@ -164,7 +178,7 @@ def test_accession_IDs(df):
                 #checks if current selection fits what an accession number should be
                 if len(str(accession_part)) == 8 or 6 and letter_count<3 and number_count>3:
                     processed_accession_ID = accession_part
-                    processed_accession_IDs.loc[len(processed_accession_IDs.index)] = [Species,Exemplar_Additional,processed_accession_ID,segment,Genus,
+                    processed_accession_IDs.loc[len(processed_accession_IDs.index)] = [Isolate_ID,Species,Exemplar_Additional,processed_accession_ID,segment,Genus,
                                                                                        df['Sort'][entry_count],
                                                                                        df['Isolate Sort'][entry_count],
                                                                                        df['Virus GENBANK accession'][entry_count],
@@ -219,10 +233,13 @@ def fetch_fasta(processed_accession_file_name):
     count = 0
     for accession_ID in Accessions['Accession_IDs']:
             row = Accessions.loc[count]
-            Species = row.iloc[1]
-            accession_ID = row.iloc[2]
-            segment = row.iloc[3]
-            genus_name = row.iloc[4]
+            Isolate_ID   = row.iloc[1]
+            Species      = row.iloc[2]
+            Isolate_type = row.iloc[3]
+            accession_ID = row.iloc[4]
+            segment      = row.iloc[5]
+            genus_name   = row.iloc[6]
+            if args.verbose: print("Fetch [",count,"] ID:",Isolate_ID," Species:",Species," Segment:",segment," Accession:",accession_ID)
 
             # emtpy cell becomes float:NaN!
             if segment != segment: 
@@ -377,6 +394,7 @@ def main():
 
     if args.mode == "fasta" or None:
         print("# pull FASTAs from NCBI")
+        if args.verbose: print("Using ", processed_accession_file_name)
         fetch_fasta(processed_accession_file_name)
 
     if args.mode == "db" or None:

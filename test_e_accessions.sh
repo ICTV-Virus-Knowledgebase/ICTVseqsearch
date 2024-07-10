@@ -35,10 +35,11 @@ echo "GENUS:       $GENUS"
 BLAST_DB=./blast/ICTV_VMR_e
 echo "BLAST_DB:    $BLAST_DB"
 BLAST_OUT_FMT="-outfmt '7 delim=,'"; BLAST_OUT_SUFFIX="raw.txt"  # scot original
-BLAST_OUT_FMT="-outfmt 5 -max_target_seqs 10 -max_hsps 10"; BLAST_OUT_SUFFIX=".hit10hsp10.xml"
-BLAST_OUT_FMT="-outfmt 5"; BLAST_OUT_SUFFIX=".full.xml"
-BLAST_OUT_FMT="-outfmt 5 -max_target_seqs 10"; BLAST_OUT_SUFFIX=".hit10.xml"
-BLAST_OUT_FMT="-outfmt 5 -max_target_seqs 20"; BLAST_OUT_SUFFIX=".hit20.xml"
+BLAST_OUT_FMT="-outfmt 5 -max_target_seqs 10 -max_hsps 10"; BLAST_OUT_SUFFIX="hit10hsp10.xml"
+BLAST_OUT_FMT="-outfmt 5"; BLAST_OUT_SUFFIX="full.xml"
+BLAST_OUT_FMT="-outfmt 5 -max_target_seqs 10"; BLAST_OUT_SUFFIX="hit10.xml"
+BLAST_OUT_FMT="-outfmt 5 -max_target_seqs 20"; BLAST_OUT_SUFFIX="hit20.xml"
+BLAST_OUT_FMT="-outfmt 5 -max_target_seqs 60"; BLAST_OUT_SUFFIX="hit60.xml"
 # 
 # BLAST_ARGS
 # 
@@ -81,10 +82,12 @@ echo "# enumerate A seqs"
 echo "# "
 echo "# scan ACCESSION_TSV=$ACCESSION_TSV"
 echo "# "
-A_FASTAS=$(awk -v DIR=$QUERY_DIR -v TARGET_GENUS="$GENUS" 'BEGIN{FS="\t";GENUS=5;ACC=3}(NR>1&&(TARGET_GENUS="*"||TARGET_GENUS=$GENUS)){print DIR "/" $GENUS "/" $ACC ".fa"}' $ACCESSION_TSV)
+A_FASTAS=$(awk -v DIR=$QUERY_DIR -v TARGET_GENUS="$GENUS" 'BEGIN{FS="\t";GENUS=5;ACC=3}(NR>1&&(TARGET_GENUS=="*"||TARGET_GENUS==$GENUS)){print DIR "/" $GENUS "/" $ACC ".fa"}' $ACCESSION_TSV)
 #A_FASTAS=$(find $QUERY_DIR -name "*.fa")
 echo '# found ' $(wc -l $ACCESSION_TSV) " A accessions"
-
+if [ "$GENUS" != "*" ]; then 
+    echo '# FILTERD TO ' $(echo $A_FASTAS | sed -e 's/ /\n/g'| wc -l ) " GENUS=$GENUS A accessions"
+fi
 
 echo "#"
 echo "# run blast"
