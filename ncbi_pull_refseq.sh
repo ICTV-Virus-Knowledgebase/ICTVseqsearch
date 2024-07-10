@@ -10,6 +10,7 @@ OUT_DIR="refseq"
 PREFIX="$OUT_DIR/b_genbank.txt."
 PREFIX_OUT="$OUT_DIR/b_refseq.txt."
 OUT_MAP="genbank_refseq_map.txt"
+TEST0="test_OQ721911.txt"
 TEST1="test_acc_list_1.txt"
 TEST10="test_acc_list_10.txt"
 
@@ -65,15 +66,28 @@ fi
  
 # NCBI query for each file
 mkdir -p test
-for file in $TEST1 $TEST10 ; do
+for file in $TEST0 $TEST1 $TEST10 ; do
     out=test/${file}.out
     echo "############### $file -> $out ##############"
     if [[ ${file} -nt ${out} ]]; then 
 	echo "QUERY NCBI:"
-	elink -input $file -db nucleotide -target nucleotide -name nuccore_nuccore_gbrs \
-	    | efetch -format docsum \
-	    | xtract -pattern DocumentSummary -sep "\t" -element Caption AssemblyAcc Organism TaxID \
-	    | tee $out
+	t1=test/${file}.tmp.1.txt
+	t2=test/${file}.tmp.2.txt
+	t3=$out
+	( \
+	  elink -input $file -db nucleotide -target nucleotide -name nuccore_nuccore_gbrs > $t1 \
+              || echo "ERROR $? : elink -input $file -db nucleotide -target nucleotide -name nuccore_nuccore_gbrs > $t1" > /dev/stderr \
+	) \
+	    && ( \
+		 efetch -format docsum < $t1 > $t2 \
+		     || echo "ERROR $? : effect -format docsum < $t1 > $t2"  > /dev/stderr
+	) \
+	    && ( \
+		 cat $t2 \
+		     | xtract -pattern DocumentSummary -sep "\t" -element Caption AssemblyAcc Organism TaxID > $t3 \
+		     || echo "ERROR $? : xtract -pattern DocumentSummary -sep '\t' -element Caption AssemblyAcc Organism TaxID < $t2 > $t3">/dev/stderr \
+	) \
+	    && cat $t3
     else
 	echo "SKIP"
     fi
