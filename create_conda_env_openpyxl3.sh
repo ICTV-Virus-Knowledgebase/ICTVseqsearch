@@ -7,5 +7,6 @@ conda create \
 	-c bioconda -c conda-forge \
 	pandas Pyarrow \
 	xlrd openpyxl=3 numpy \
-	biopython 
+	biopython \
+	bioframe 
 
