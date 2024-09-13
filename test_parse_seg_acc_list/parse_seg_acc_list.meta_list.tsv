@@ -15,7 +15,7 @@ isolate_id	accession_index	gb_segment_name	gb_accession	rs_segment_name	rs_acces
 1007556.4	5	DNA-S	EF546810	DNA-S	NC_010316	seg_acc_list
 1007556.4	6	DNA-U3	EF546809	DNA-U3	NC_010315	seg_acc_list
 1007556.1	1	DNA-C	EF546812	DNA-C	NC_010318	seg_acc_single_matched
-1007556.1	1	DNA-C	EF546812			seg_acc_single_mismatched
-1007556.1	1			DNA-N	NC_010318	seg_acc_single_mismatched
+1007556.2	1			DNA-N	NC_010318	seg_acc_single_mismatched
+1007556.2	1	DNA-C	EF546812			seg_acc_single_mismatched
 1007556.3	1	DNA-C	EF546812	DNA-C	NC_010318	seg_acc_single_ragged
 1007556.3	2			DNA-U3	NC_010315	seg_acc_single_ragged
