@@ -122,7 +122,7 @@ def write_dict_to_tsv(merged_dict, file_name="parse_seg_acc_list.accessions_map.
     df = df.sort_values(by=['isolate_id', 'accession_index'])
 
     # Write the DataFrame to a TSV file
-    df.to_csv(file_name, sep='\t', index_label='key')
+    df.to_csv(file_name, sep='\t', index=False) #index_label='key')
 
 data = [
     { "case":"acc_both_empty", "isolate_id":1003732, "gb_a":'', "rs_a":'' },
@@ -169,4 +169,4 @@ meta_df= meta_df.sort_values(by=['case','isolate_id', 'accession_index'])
 
 # Write the DataFrame to a TSV file
 file_name = "parse_seg_acc_list.meta_list.tsv"
-meta_df.to_csv(file_name, sep='\t', index_label='key')
+meta_df.to_csv(file_name, sep='\t', index=False) #, index_label='key')

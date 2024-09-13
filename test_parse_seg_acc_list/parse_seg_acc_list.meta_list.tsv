@@ -1,21 +1,21 @@
-key	isolate_id	accession_index	gb_segment_name	gb_accession	rs_segment_name	rs_accession	case
-0	1003732	1					acc_both_empty
-2	1003732	1				NC_027989	acc_gb_missing
-4	1003732	1		HM246720		NC_027989	acc_list
-5	1003732	2		HM246721		NC_041833	acc_list
-6	1003732	3		HM246722		NC_041831	acc_list
-7	1003732	4		HM246723		NC_041832	acc_list
-8	1003732	5		HM246724		NC_041834	acc_list
-1	1003732	1		HM246720			acc_rs_missing
-3	1003732	1		HM246720		NC_027989	acc_single
-16	1007556	1	DNA-C	EF546812	DNA-C	NC_010318	seg_acc_list
-19	1007556	2	DNA-M	EF546811	DNA-M	NC_010317	seg_acc_list
-17	1007556	3	DNA-N	EF546808	DNA-N	NC_010314	seg_acc_list
-15	1007556	4	DNA-R	EF546813	DNA-R	NC_010319	seg_acc_list
-18	1007556	5	DNA-S	EF546810	DNA-S	NC_010316	seg_acc_list
-14	1007556	6	DNA-U3	EF546809	DNA-U3	NC_010315	seg_acc_list
-9	1007556	1	DNA-C	EF546812	DNA-C	NC_010318	seg_acc_single_matched
-10	1007556	1			DNA-N	NC_010318	seg_acc_single_mismatched
-11	1007556	1	DNA-C	EF546812			seg_acc_single_mismatched
-13	1007556	1	DNA-C	EF546812	DNA-C	NC_010318	seg_acc_single_ragged
-12	1007556	2			DNA-U3	NC_010315	seg_acc_single_ragged
+isolate_id	accession_index	gb_segment_name	gb_accession	rs_segment_name	rs_accession	case
+1003732	1					acc_both_empty
+1003732	1				NC_027989	acc_gb_missing
+1003732	1		HM246720		NC_027989	acc_list
+1003732	2		HM246721		NC_041833	acc_list
+1003732	3		HM246722		NC_041831	acc_list
+1003732	4		HM246723		NC_041832	acc_list
+1003732	5		HM246724		NC_041834	acc_list
+1003732	1		HM246720			acc_rs_missing
+1003732	1		HM246720		NC_027989	acc_single
+1007556	1	DNA-C	EF546812	DNA-C	NC_010318	seg_acc_list
+1007556	2	DNA-M	EF546811	DNA-M	NC_010317	seg_acc_list
+1007556	3	DNA-N	EF546808	DNA-N	NC_010314	seg_acc_list
+1007556	4	DNA-R	EF546813	DNA-R	NC_010319	seg_acc_list
+1007556	5	DNA-S	EF546810	DNA-S	NC_010316	seg_acc_list
+1007556	6	DNA-U3	EF546809	DNA-U3	NC_010315	seg_acc_list
+1007556	1	DNA-C	EF546812	DNA-C	NC_010318	seg_acc_single_matched
+1007556	1			DNA-N	NC_010318	seg_acc_single_mismatched
+1007556	1	DNA-C	EF546812			seg_acc_single_mismatched
+1007556	1	DNA-C	EF546812	DNA-C	NC_010318	seg_acc_single_ragged
+1007556	2			DNA-U3	NC_010315	seg_acc_single_ragged
