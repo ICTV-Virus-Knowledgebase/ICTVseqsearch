@@ -26,8 +26,9 @@ VMR_TSV="processed_accessions_b.tsv"
 ACC_TSV="processed_accessions_b_acc_only.txt"
 BATCH_N=1
 OUT_DIR="refseq_${BATCH_N}"
-PREFIX="$OUT_DIR/b_genbank.txt."
-PREFIX_OUT="$OUT_DIR/b_refseq.txt."
+#OUT_DIR="test_${BATCH_N}"
+PREFIX="b_genbank.txt."
+PREFIX_OUT="b_refseq.txt."
 OUT_MAP="genbank_refseq_map.txt"
 TEST0="test_OQ721911.txt"
 TEST1="test_acc_list_1.txt"
@@ -69,16 +70,20 @@ if [ $QUERY_ONLY -lt 1 ]; then
     fi
     wc -l $VMR_TSV
 
-    # just accessions - remove ()'s
-    cut -f 5   $VMR_TSV \
+    # just accessions column
+    # AND remove ()'s
+    # AND remove version numebrs
+    ./cutcols $VMR_TSV Accession \
 	| perl -pe 's/\([0-9.]+\)//g;' \
+	| perl -pe 's/\.[0-9]+$//g;' \
 	> $ACC_TSV
     
     wc -l $ACC_TSV
 
-    # split main file into small piecees
+    # split main file small files named by access number
     mkdir -p $OUT_DIR
-    split -l ${BATCH_N}  $ACC_TSV $PREFIX
+    tail -n +2 $ACC_TSV | \
+	awk -v OUT_DIR="$OUT_DIR" -v PREFIX="$PREFIX" '{subd = OUT_DIR"/"substr($1,length($1)-1,2); cmd="mkdir -p " subd; cmd  | getline; close(cmd); outf=subd"/"PREFIX""$1; print $1 > outf ; close(outf)}'
 
     # short test files
     head -2  $ACC_TSV  | grep -v Accession_IDs > $TEST1
@@ -90,65 +95,129 @@ fi
 ## QUERY NCBI
 ##
 
- 
-# NCBI query for each file
+# ----------------------------------------------------------------------
+# NCBI query for each file (TEST)
+# --------------------------------------------------------------------
 mkdir -p test
 for file in $TEST0 $TEST1 $TEST10 ; do
-    out=test/${file}.out
+    out=test/${file}.tsv
+    err=test/${file}.err
+    xml=test/${file}.xml
     echo "############### $file -> $out ##############"
-    if [[ ${file} -nt ${out} ]]; then 
-	echo "QUERY NCBI:"
-	t1=test/${file}.tmp.1.txt
-	t2=test/${file}.tmp.2.txt
-	t3=$out
-	( \
-	  elink -input $file -db nucleotide -target nucleotide -name nuccore_nuccore_gbrs > $t1 \
-              || echo "ERROR $? : elink -input $file -db nucleotide -target nucleotide -name nuccore_nuccore_gbrs > $t1" > /dev/stderr \
-	) \
-	    && ( \
-		 efetch -format docsum < $t1 > $t2 \
-		     || echo "ERROR $? : effect -format docsum < $t1 > $t2"  > /dev/stderr
-	) \
-	    && ( \
-		 cat $t2 \
-		     | xtract -pattern DocumentSummary -sep "\t" -element Caption AssemblyAcc Organism TaxID > $t3 \
-		     || echo "ERROR $? : xtract -pattern DocumentSummary -sep '\t' -element Caption AssemblyAcc Organism TaxID < $t2 > $t3">/dev/stderr \
-	) \
-	    && cat $t3
+    if [[ ! -e ${out} || ${file} -nt ${out} || $0 -nt ${out} ]]; then 
+	echo "# QUERY NCBI: "
+	#
+	# check if we've fetched the record
+	#
+	if [[ ! -e ${xml} || ${file} -nt ${xml} ]]; then
+	    echo "#      FETCH ${file}"
+	    ( \
+	      elink -input $file -db nucleotide -target nucleotide -name nuccore_nuccore_gbrs 2> $err \
+		  || echo "ERROR $? : elink -input $file -db nucleotide -target nucleotide -name nuccore_nuccore_gbrs > $t1" > /dev/stderr \
+	      ) \
+		| \
+		( \
+		  efetch -format docsum > ${xml} \
+		      || echo "ERROR $? : effect -format docsum > $xml"  > /dev/stderr \
+		) 
+	    # error check
+	    grep -q "QUERY FAILURE" $err 2>/dev/null
+	    if [ $? -eq 0 ]; then
+		echo "ERROR: QUERY FAILURE: $file" 
+		cat $err > /dev/stderr
+	    fi
+	else
+	    echo "# SKIP FETCH ${file}"
+	fi
+	#
+	# parse fetched data
+	#
+	if [[ ! -e ${out}|| ${xml} -nt ${out} || $0 -nt ${out} ]]; then
+	    echo "#      PARSE ${file}"
+	    ELEMENT_LIST="Caption AssemblyAcc Organism TaxId Slen MolType Topology Completeness Strand"
+	    cat $xml | xtract -pattern DocumentSummary -sep "\t" -element $ELEMENT_LIST > $out \
+		|| echo "ERROR $? : xtract -pattern DocumentSummary -sep '\t' -element $ELEMENT_LIST < $xml > $out">/dev/stderr
+	    cat $out
+	else
+	    echo "# SKIP PARSE ${file}"
+	fi
     else
-	echo "SKIP"
+	echo "# SKIP NCBI FETCH ${file}"
     fi
 done
 
-
-
-# NCBI query for each file
-for file in ${PREFIX}* ; do
-    out=$(echo $file | perl -pe "s|$PREFIX|$PREFIX_OUT|;")
-    echo -n "# [$file => $out] ##  "
-    if [[ ! -e ${out} ]]; then
-	echo -n "QUERY: "
-	elink -input $file -db nucleotide -target nucleotide -name nuccore_nuccore_gbrs \
-	    | efetch -format docsum \
-	    | xtract -pattern DocumentSummary -sep "\t" -element Caption AssemblyAcc Organism TaxID \
-		     2>&1 > $out
-	wc -l $out
+# ----------------------------------------------------------------------
+# NCBI query for each file (REAL)
+# ----------------------------------------------------------------------
+for file in $OUT_DIR/*/${PREFIX}* ; do
+    out=$(echo $file | perl -pe "s|$PREFIX|$PREFIX_OUT|;").tsv
+    err=$(echo $file | perl -pe "s|$PREFIX|$PREFIX_OUT|;").err
+    xml=$(echo $file | perl -pe "s|$PREFIX|$PREFIX_OUT|;").xml
+    if [ $VERBOSE ]; then echo "## [$file => $out] ##  "; fi
+    if [[ ! -e ${out} || ${file} -nt ${out} || $0 -nt ${out} ]]; then
+	echo "# QUERY NCBI: "
+	#
+	# check if we've fetched the record
+	#
+	if [[ ! -e ${xml} || ${file} -nt ${xml} ]]; then
+	    echo "#      FETCH ${file}"
+	    ( \
+	      elink -input $file -db nucleotide -target nucleotide -name nuccore_nuccore_gbrs 2> $err \
+		  || echo "ERROR $? : elink -input $file -db nucleotide -target nucleotide -name nuccore_nuccore_gbrs > $t1" > /dev/stderr \
+	      ) \
+		| \
+		( \
+		  efetch -format docsum > ${xml} \
+		      || echo "ERROR $? : effect -format docsum > $xml"  > /dev/stderr \
+		) 
+	    # error check
+	    grep -q "QUERY FAILURE" $err 2>/dev/null
+	    if [ $? -eq 0 ]; then
+		echo "ERROR: QUERY FAILURE: $file" 
+		cat $err > /dev/stderr
+	    fi
+	else
+	    echo "# SKIP FETCH ${file}"
+	fi
+	#
+	# parse fetched data
+	#
+	if [[ ! -e ${out}|| ${xml} -nt ${out} || $0 -nt ${out} ]]; then
+	    echo "#      PARSE ${file}"
+	    ELEMENT_LIST="Caption AssemblyAcc Organism TaxId Slen MolType Topology Completeness Strand"
+	    cat $xml | xtract -pattern DocumentSummary -sep "\t" -element $ELEMENT_LIST > $out \
+		|| echo "ERROR $? : xtract -pattern DocumentSummary -sep '\t' -element $ELEMENT_LIST < $xml > $out">/dev/stderr
+	    cat $out
+	else
+	    echo "# SKIP PARSE ${file}"
+	fi
     else
-	echo "SKIP"
+	echo "# SKIP NCBI FETCH ${file}"
     fi
 done
 
-#
-# merge output files
-#
-sort -k2,2 ${PREFIX_OUT}* > $OUT_MAP
-echo "FROM $VMR"
+echo "#"
+echo "# merge output files"
+echo "#"
+#sort -k2,2 $OUT_DIR/*/${PREFIX_OUT}* > $OUT_MAP # too many files
+echo "#" find $OUT_DIR -name "${PREFIX_OUT}*.tsv" -exec cat {} + | sort -k2,2 > $OUT_MAP
+find $OUT_DIR -name "${PREFIX_OUT}*.tsv" -exec cat {} + | sort -k2,2 > $OUT_MAP
+
+echo "#"
+echo "# scan for errors"
+echo "#"
+echo ./list_errors.sh $OUT_DIR \"\|\"
+./list_errors.sh $OUT_DIR \|
+
+echo "QC $VMR"
 echo "   GENBANK: $(wc -l $VMR_TSV)"
 echo "   REFSEQ:  $(wc -l $OUT_MAP)"
+echo "   ERRORS:  $(wc -l $OUT_DIR/error_list.txt)"
 
 
-#merge RefSeq into VMR export
+echo "#"
+echo "# merge RefSeq into VMR export"
+echo "#"
+echo ./update_vrm_refseq.py                                                   
 ./update_vrm_refseq.py                                                   
 
-# QC check
- cut -f 3 processed_accessions_e.tsv | sort | uniq -c | sort -k1,1n | tail
