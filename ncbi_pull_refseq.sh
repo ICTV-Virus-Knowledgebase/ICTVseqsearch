@@ -26,8 +26,8 @@ VMR_TSV="processed_accessions_b.tsv"
 ACC_TSV="processed_accessions_b_acc_only.txt"
 BATCH_N=1
 OUT_DIR="refseq_${BATCH_N}"
-PREFIX="$OUT_DIR/b_genbank.txt."
-PREFIX_OUT="$OUT_DIR/b_refseq.txt."
+PREFIX="b_genbank.txt."
+PREFIX_OUT="b_refseq.txt."
 OUT_MAP="genbank_refseq_map.txt"
 TEST0="test_OQ721911.txt"
 TEST1="test_acc_list_1.txt"
@@ -69,16 +69,20 @@ if [ $QUERY_ONLY -lt 1 ]; then
     fi
     wc -l $VMR_TSV
 
-    # just accessions - remove ()'s
-    cut -f 5   $VMR_TSV \
+    # just accessions column
+    # AND remove ()'s
+    # AND remove version numebrs
+    ./cutcols $VMR_TSV Accession \
 	| perl -pe 's/\([0-9.]+\)//g;' \
+	| perl -pe 's/\.[0-9]+$//g;' \
 	> $ACC_TSV
     
     wc -l $ACC_TSV
 
-    # split main file into small piecees
+    # split main file small files named by access number
     mkdir -p $OUT_DIR
-    split -l ${BATCH_N}  $ACC_TSV $PREFIX
+    tail -n +2 $ACC_TSV | \
+	awk -v OUT_DIR="$OUT_DIR" -v PREFIX="$PREFIX" '{subd = OUT_DIR"/"substr($1,length($1)-1,2); "mkdir -p " subd | getline;  print $1 > subd"/"PREFIX""$1}'
 
     # short test files
     head -2  $ACC_TSV  | grep -v Accession_IDs > $TEST1
@@ -123,7 +127,7 @@ done
 
 
 # NCBI query for each file
-for file in ${PREFIX}* ; do
+for file in $OUT_DIR/*/${PREFIX}* ; do
     out=$(echo $file | perl -pe "s|$PREFIX|$PREFIX_OUT|;")
     echo -n "# [$file => $out] ##  "
     if [[ ! -e ${out} ]]; then
@@ -141,7 +145,7 @@ done
 #
 # merge output files
 #
-sort -k2,2 ${PREFIX_OUT}* > $OUT_MAP
+sort -k2,2 $OUT_DIR/*/${PREFIX_OUT}* > $OUT_MAP
 echo "FROM $VMR"
 echo "   GENBANK: $(wc -l $VMR_TSV)"
 echo "   REFSEQ:  $(wc -l $OUT_MAP)"
