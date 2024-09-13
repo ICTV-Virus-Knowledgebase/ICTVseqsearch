@@ -96,6 +96,7 @@ def merge_acc_dicts(isolate_id, gb_accessions_dict, rs_accessions_dict):
             merged_dict[key] = {
                 'isolate_id': gb_entry.get('isolate_id', rs_entry.get('isolate_id')),
                 'accession_index': gb_entry.get('accession_index', rs_entry.get('accession_index')),
+                'segment_name': gb_entry.get('segment_name', rs_entry.get('segment_name')),
                 'gb_segment_name': None,
                 'gb_accession': gb_entry.get('accession', None),
                 'rs_segment_name': None,
@@ -106,6 +107,7 @@ def merge_acc_dicts(isolate_id, gb_accessions_dict, rs_accessions_dict):
             merged_dict[key] = {
                 'isolate_id': gb_entry.get('isolate_id', rs_entry.get('isolate_id')),
                 'accession_index': gb_entry.get('accession_index', rs_entry.get('accession_index')),
+                'segment_name': gb_entry.get('segment_name', rs_entry.get('segment_name')),
                 'gb_segment_name': gb_entry.get('segment_name', None),
                 'gb_accession'   : gb_entry.get('accession', None),
                 'rs_segment_name': rs_entry.get('segment_name', None),
@@ -119,7 +121,7 @@ def write_dict_to_tsv(merged_dict, file_name="parse_seg_acc_list.accessions_map.
     df = pd.DataFrame.from_dict(merged_dict, orient='index')
 
     # Sort the DataFrame by 'isolate_id' and 'accession_index'
-    df = df.sort_values(by=['isolate_id', 'accession_index'])
+    df = df.sort_values(by=['isolate_id', 'accession_index','segment_name'])
 
     # Write the DataFrame to a TSV file
     df.to_csv(file_name, sep='\t', index=False) #index_label='key')
@@ -164,7 +166,7 @@ for datum in data:
 meta_df = pd.DataFrame(meta_list)
 
 # Sort the DataFrame by 'isolate_id' and 'accession_index'
-meta_df= meta_df.sort_values(by=['case','isolate_id', 'accession_index'])
+meta_df= meta_df.sort_values(by=['case','isolate_id', 'accession_index','segment_name'])
 
 
 # Write the DataFrame to a TSV file
