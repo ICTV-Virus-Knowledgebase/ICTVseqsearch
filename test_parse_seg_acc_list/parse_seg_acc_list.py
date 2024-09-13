@@ -155,13 +155,17 @@ for datum in data:
     write_dict_to_tsv(merge_d, fname)
     print("Wrote "+fname)
 
+    for item in merge_d.values(): 
+        item.update({'case': datum["case"]})
+
     meta_list.extend(merge_d.values())
 
 # final results to DF
 meta_df = pd.DataFrame(meta_list)
 
 # Sort the DataFrame by 'isolate_id' and 'accession_index'
-meta_df= meta_df.sort_values(by=['isolate_id', 'accession_index'])
+meta_df= meta_df.sort_values(by=['case','isolate_id', 'accession_index'])
+
 
 # Write the DataFrame to a TSV file
 file_name = "parse_seg_acc_list.meta_list.tsv"
