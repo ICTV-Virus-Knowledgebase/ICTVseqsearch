@@ -8,5 +8,6 @@ conda create \
 	pandas Pyarrow \
 	xlrd openpyxl=3 numpy \
 	biopython \
-	bioframe 
+	bioframe \
+        natsort
 
