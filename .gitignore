@@ -32,3 +32,5 @@ conda/
 *.fa
 fasta_new_vmr_a/
 fasta_new_vmr/
+refseq*/
+
