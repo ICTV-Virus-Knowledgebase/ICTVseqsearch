@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+#
+# cutno [-h] FILENAME colname1 [colname2...]
+#
+# -h suppress header in outoupt
+#
+# Extract NAMED columns from a TSV file, in the specified order
+#
+#
+
+#
+# flags
+#
+START_LINE=1
+if [[ "$1" == -h* ]]; then 
+    # skip header
+    START_LINE=2
+    shift
+fi
+
+# 
+# input file
+#
+if [[ -e "$1" ]]; then 
+   INFILE="$1"
+   shift
+else
+    echo "ERROR: no such file: $1" 1>2 
+    exit 1
+fi
+
+# 
+# List of columns
+#
+COLS=""
+while [[ ! -z "$1" ]]; do
+    THIS_COL_IDX=$(egrep -n "^$1\$" <(head -1 $INFILE | sed 's/\t/\n/g') | sed 's/:.*//')
+    if [ -z "$COLS" ]; then COLS="\$$THIS_COL_IDX"
+    else COLS="$COLS,\$$THIS_COL_IDX"
+    fi
+
+    #echo "# COLS=$COLS"
+    shift
+done
+
+#
+# Use AWK to execute, so we can us any column order, even repeat columns (unlike cut)
+#
+
+# run the extraction
+exec awk -F$'\t' "BEGIN{OFS=FS}(NR>=$START_LINE){print $COLS}" $INFILE 
