@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 #
 #
 if [ -z "$(which rclone 2>/dev/null)" ]; then
