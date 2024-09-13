@@ -52,8 +52,13 @@ if [ -z "$(which conda 2>/dev/null)" ]; then
     module load Anaconda3
 fi
 if [[ "$(which python 2>/dev/null)" != *$PWD/conda* ]]; then
-    echo conda activate conda/vmr_openpyxl3
-    conda activate conda/vmr_openpyxl3
+    if [[ -e "conda/vmr_openpyxl3.working" ]]; then
+        echo conda activate conda/vmr_openpyxl3_working
+        conda activate conda/vmr_openpyxl3_working
+    else
+        echo conda activate conda/vmr_openpyxl3
+        conda activate conda/vmr_openpyxl3
+    fi
 fi
 
 # ---------------------------------------------------------------------- 
@@ -78,8 +83,8 @@ echo VMR_XLSX=$VMR_XLSX
 echo "#"
 echo "# parse VMR "
 echo "#"
-echo  ./VMR_to_fasta.py -verbose -mode VMR -VMR_file_name $VMR_XLSX
-$SRUN ./VMR_to_fasta.py -verbose -mode VMR -VMR_file_name $VMR_XLSX
+echo  ./VMR_to_fasta.py -verbose -mode VMR -ea b -VMR_file_name $VMR_XLSX
+$SRUN ./VMR_to_fasta.py -verbose -mode VMR -ea b -VMR_file_name $VMR_XLSX
 
 echo "#"
 echo "# pull and format fastas"

@@ -34,4 +34,5 @@ fasta_new_vmr_a/
 fasta_new_vmr/
 # intermediate files
 fixed_vmr_*.tsv
+refseq*/
 

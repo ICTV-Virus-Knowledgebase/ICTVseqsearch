@@ -16,6 +16,7 @@ import time
 from urllib import error
 import argparse
 import numpy as np
+import re
 import sys
 import os
 import pathlib # for stem=basename(.txt)
@@ -30,6 +31,7 @@ parser = argparse.ArgumentParser(description="")
 
 #setting arguments.
 parser.add_argument('-verbose',help="printout details during run",action=argparse.BooleanOptionalAction)
+parser.add_argument('-tmi',help="printout Too Much Information during run",action=argparse.BooleanOptionalAction)
 parser.add_argument('-file',help="optional argument. Name of the file to get arguments from.",type=open, action=LoadFromFile)
 parser.add_argument("-email",help="email for Entrez to use when fetching Fasta files")
 parser.add_argument("-mode",help="what function to do. Options: VMR,fasta,db")
@@ -67,22 +69,33 @@ def load_VMR_data():
 
     # Importing excel sheet as a DataFrame. Requires xlrd and openpyxl package
     try:
-        raw_vmr_data = pandas.read_excel(args.VMR_file_name,engine='openpyxl')
-        if args.verbose: print("VMR data loaded: {0} rows, {1} columns.".format(*raw_vmr_data.shape))
-        if args.verbose: print("\tcolumns: ",raw_vmr_data.columns)
+        # open excel file
+        vmr_excel = pandas.ExcelFile(args.VMR_file_name,engine='openpyxl')
+        if args.verbose: print("\tOpened VMR Excel file: with {0} sheets: {1}".format(len(vmr_excel.sheet_names),args.VMR_file_name))
 
+        # find first sheet matching "^VMR MSL"
+        sheet_name = next((sheet for sheet in vmr_excel.sheet_names if re.match(r"^VMR MSL", sheet)), None)
+        if args.verbose: print("\tFound sheet '{0}'.".format(sheet_name))
 
-        # list of the columns to extract from raw_vmr_data
-        vmr_cols_needed = ['Isolate ID','Exemplar or additional isolate','Sort','Isolate Sort','Virus GENBANK accession','Virus REFSEQ accession','Species','Genome coverage','Genus']
+        if sheet_name is None:
+            raise ValueError("No worksheet name matching the pattern '^VMR MSL' found.")
+        else:
+            raw_vmr_data = pandas.read_excel(args.VMR_file_name,sheet_name=sheet_name,engine='openpyxl')
+            if args.verbose: print("VMR data loaded: {0} rows, {1} columns.".format(*raw_vmr_data.shape))
+            if args.verbose: print("\tcolumns: ",raw_vmr_data.columns)
 
-        for col_name in list(raw_vmr_data.columns):
-            if col_name in vmr_cols_needed:
-                print("    "+col_name+" [NEEDED]")
-            else:
-                print("    "+col_name)
-        for col_name in vmr_cols_needed:
-            if not col_name in list(raw_vmr_data.columns):
-                print("    "+col_name+" [!MISSING!]")
+            # list of the columns to extract from raw_vmr_data
+            vmr_cols_needed = ['Isolate ID','Exemplar or additional isolate','Species Sort','Isolate Sort','Virus GENBANK accession','Virus REFSEQ accession','Species','Genome coverage','Genus']
+            
+            for col_name in list(raw_vmr_data.columns):
+                if col_name in vmr_cols_needed:
+                    print("    "+col_name+" [NEEDED]")
+                else:
+                    print("    "+col_name)
+                    
+            for col_name in vmr_cols_needed:
+                if not col_name in list(raw_vmr_data.columns):
+                    print("    "+col_name+" [!MISSING!]")
 
     except(FileNotFoundError):
         print("The VMR file specified does not exist! Make sure the path set by '-VMR_file_name' is correct.",file=sys.stderr)
@@ -101,7 +114,7 @@ def load_VMR_data():
     # DataFrame.loc is helpful for indexing by row. Allows expression as an argument. Here, 
     # it finds every row where 'E' is in column 'Exemplar or additional isolate' and returns 
     # only the columns specified. 
-    #vmr_data = truncated_vmr_data.loc[truncated_vmr_data['Exemplar or additional isolate']==args.ea.upper(),['Sort','Isolate Sort','Species','Virus GENBANK accession',"Genome coverage","Genus"]]
+    #vmr_data = truncated_vmr_data.loc[truncated_vmr_data['Exemplar or additional isolate']==args.ea.upper(),['Species Sort','Isolate Sort','Species','Virus GENBANK accession',"Genome coverage","Genus"]]
     if args.ea.upper() == 'A' or args.ea.upper() == 'E': 
         vmr_data = raw_vmr_data.loc[raw_vmr_data['Exemplar or additional isolate']==args.ea.upper(),vmr_cols_needed]
     elif args.ea.upper() == 'B':
@@ -146,13 +159,13 @@ def test_accession_IDs(df):
         accessions_str = str(df['Virus GENBANK accession'][entry_count])
         # remove whitespace.
         accessions_str = accessions_str.replace(" ","")
-        print("accessions_str.replace(' '):"+accessions_str)
+        if args.tmi: print("accessions_str.replace(' '):"+accessions_str)
 
         # instead of trying to split by commas and semicolons, I just replace the commas with semicolons. 
         accessions_str = accessions_str.replace(",",";")
-        print("accessions_str.replace(','):"+accessions_str)
+        if args.tmi: print("accessions_str.replace(','):"+accessions_str)
         accession_list = accessions_str.split(';')
-        print("accessions_list:"+"|".join(accession_list))
+        if args.tmi: print("accessions_list:"+"|".join(accession_list))
         
         #
         # split optional "segment_name:" prefix on accessions
@@ -201,7 +214,7 @@ def test_accession_IDs(df):
                                                                                        processed_accession,
                                                                                        segment_name,
                                                                                        df['Genus'][entry_count],
-                                                                                       df['Sort'][entry_count],
+                                                                                       df['Species Sort'][entry_count],
                                                                                        df['Isolate Sort'][entry_count],
                                                                                        df['Virus GENBANK accession'][entry_count],
                                                                                        df['Virus REFSEQ accession'][entry_count],
