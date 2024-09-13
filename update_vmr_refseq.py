@@ -10,10 +10,11 @@
 # Update will use Original_Accession_String as the PK into VMR table.
 # It will update both the Genbank and RefSeq accession strings
 #
+print("Importing...")
 import argparse
 import pandas
 from pprint import pprint
-
+print("Parsing...")
 parser = argparse.ArgumentParser(description="")
 
 #setting arguments.
@@ -48,8 +49,9 @@ print("#########################################################################
 #
 # remove .# suffix from accession numbers
 #
-vmr_proc_df["genbank"] = vmr_proc_df.Accession_IDs.replace(to_replace='\\.[-0-9]+$', regex=True, value='')
-refseq_df[  "genbank"] =   refseq_df.genbank.replace(      to_replace='\\.[-0-9]+$', regex=True, value='')
+vmr_proc_df["genbank"] = vmr_proc_df.Accession.replace(to_replace='\\.[-0-9]+$',  regex=True, value='')
+vmr_proc_df["genbank"] = vmr_proc_df.genbank.replace(  to_replace='\\([.0-9]\\)', regex=True, value='')
+refseq_df[  "genbank"] =   refseq_df.genbank.replace(  to_replace='\\.[-0-9]+$',  regex=True, value='')
 
 print("###############################################################################################################")
 print("# merge data frames")
@@ -82,56 +84,54 @@ def format_seg_acc(seg,acc):
 
 # filter and format
 x = vmr_refseq_df.dropna(subset=['refseq'])
-x['seg_refseq']= x.apply(lambda r: format_seg_acc(r['segment'],r['refseq']), axis=1)
-x['seg_genbank']=x.apply(lambda r: format_seg_acc(r['segment'],r['genbank']),axis=1)
+x['seg_refseq']= x.apply(lambda r: format_seg_acc(r['Segment_Name'],r['refseq']), axis=1)
+x['seg_genbank']=x.apply(lambda r: format_seg_acc(r['Segment_Name'],r['genbank']),axis=1)
 
 # Group by Original_Accession_String and apply the concatenation function
-groupby_columns = ['Species','Exemplar_Additional','Original_Accession_String']
-x_new_refseq=    x[[*groupby_columns,'seg_refseq' ]].groupby(by=groupby_columns)['seg_refseq' ].apply(lambda v: '; '.join(v)).reset_index()
-x_new_refseq_ct= x[[*groupby_columns,'seg_refseq' ]].groupby(by=groupby_columns)['seg_refseq' ].apply(lambda v: len(v))
-x_new_genbank=   x[[*groupby_columns,'seg_genbank']].groupby(by=groupby_columns)['seg_genbank'].apply(lambda v: '; '.join(v)).reset_index()
-x_new_genbank_ct=x[[*groupby_columns,'seg_genbank']].groupby(by=groupby_columns)['seg_genbank'].apply(lambda v: len(v))
+groupby_columns = ['Isolate_ID','Species','Exemplar_Additional','Original_GENBANK_Accessions','Original_REFSEQ_Accessions']
+
+# GENBANK
+x_new_genbank=    x[[*groupby_columns,'seg_genbank','Segment_Index'                ]].groupby(by=groupby_columns)['seg_genbank','Segment_Index'               ].apply(lambda v: '; '.join(v.sort_values(by="Segment_Index")['seg_genbank'])).reset_index()
+x_nat_genbank=    x[[*groupby_columns,'seg_genbank','Segment_Name','Segment_Index' ]].groupby(by=groupby_columns)['seg_genbank','Segment_Index','Segment_Name'].apply(lambda v: '; '.join(v.sort_values(by="Segment_Name",key=natsort_keygen())["seq_genbank"])).reset_index()
+x_new_genbank_ct= x[[*groupby_columns,'seg_genbank'                                ]].groupby(by=groupby_columns)['seg_genbank'                               ].apply(lambda v: len(v))
+
+# REFSEQ
+x_new_refseq=    x[[*groupby_columns,'seg_refseq','Segment_Index'                ]].groupby(by=groupby_columns)['seg_refseq','Segment_Index'               ].apply(lambda v: '; '.join(v.sort_values(by="Segment_Index")['seg_refseq'])).reset_index()
+x_nat_refseq=    x[[*groupby_columns,'seg_refseq','Segment_Name','Segment_Index' ]].groupby(by=groupby_columns)['seg_refseq','Segment_Index','Segment_Name'].apply(lambda v: '; '.join(v.sort_values(by="Segment_Name",key=natsort_keygen())["seq_refseq"])).reset_index()
+x_new_refseq_ct= x[[*groupby_columns,'seg_refseq'                                ]].groupby(by=groupby_columns)['seg_refseq'                               ].apply(lambda v: len(v))
+
 
 # merge them back to one DF
 new_refseq =  pandas.merge(x_new_refseq, x_new_refseq_ct,  on=groupby_columns, how='outer', indicator=True)
 new_refseq.rename(columns = {'seg_refseq_x':'seg_refseq', 'seg_refseq_y':'seq_refseq_ct', '_merge':'seg_refseq_merge'}, inplace= True)
 
+new_nat_refseq =  pandas.merge(new_refseq, x_nat_refseq,  on=groupby_columns, how='outer', indicator=True)
+new_nat_refseq.rename(columns = {'seg_refseq_x':'seg_refseq', 'seg_refseq_y':'seq_refseq_nat', '_merge':'seg_refseq_nat_merge'}, inplace= True)
+
 new_genbank = pandas.merge(x_new_genbank,x_new_genbank_ct, on=groupby_columns, how='outer', indicator=True)
 new_genbank.rename(columns = {'seg_genbank_x':'seg_genbank', 'seg_genbank_y':'seq_genbank_ct', '_merge':'seg_genbank_merge'}, inplace= True)
 
-tabulated_df = pandas.merge(new_genbank,new_refseq,        on=groupby_columns, how='outer', indicator=True)
+new_nat_genbank = pandas.merge(new_genbank,x_nat_genbank, on=groupby_columns, how='outer', indicator=True)
+new_nat_genbank.rename(columns = {'seg_genbank_x':'seg_genbank', 'seg_genbank_y':'seq_genbank_nat', '_merge':'seg_nat_genbank_merge'}, inplace= True)
+
+tabulated_df = pandas.merge(new_nat_genbank,new_nat_refseq,        on=groupby_columns, how='outer', indicator=True)
+if args.verbose: print("   Merged: {0} rows, {1} columns.".format(*tabulated_df.shape))
+if args.verbose: print("   columns:", list(tabulated_df.columns))
+
 
 # build SQL
 def generate_update_sql(r):
-    ea=r['Exemplar_Additional'].upper()
-    if ea=='E' or ea=='A':
-        # common columns
-        ea_col             ='exemplar'
-        refseq_org_col     ='refseq_organism' # not implemented, yet
-        refseq_taxids_col  ='refseq_taxids' # not implemented, yet
-        # SQL prefix
-        sql_prefix= ""
-        # select columns by type
-        if   ea =='E':
-            genbank_acc_col ='exemplar_genbank_accession'
-            refseq_acc_col  ='exemplar_refseq_accession'
-        elif ea =='A':
-            genbank_acc_col ='isolate_genbank_accession_csv'
-            refseq_acc_col  ='isolate_refseq_accession'  # just added
-    else:
-        # error message as SQL comment
-        sql_prefix = "-- ERROR: Exemplar_Additional='"+ea+"' for "
-
     # format SQL statement
     sql = (
-        sql_prefix +
-        "UPDATE [vmr] SET " +
-        "  " + genbank_acc_col + "= '" + r['seg_genbank'] +"' "
-        ", " + refseq_acc_col  + "= '" + r['seg_refseq']  +"' "
-        " FROM [vmr] " +
-        " WHERE [" + genbank_acc_col + "] = '" + r['Original_Accession_String']+"' "
-        " AND   [" + ea_col           + "] = '" + ea +"' "
-        " AND   [" +'species'        + "] = '" + r['Species'] +"' "
+        "UPDATE [species_isolates] SET " +
+        "  [genbank_accessions] ='" + r['seg_genbank'] +"' "
+        ", [refseq_accessions]  ='" + r['seg_refseq']  +"' "
+        " FROM [species_isolatesr] " +
+        " WHERE [isolate_id] = " + str(int(r['Isolate_ID'])) + " " 
+        " AND ( [genbank_accessions] <> '" + r['seg_genbank'] +"' OR [genbank_accessions] is NULL "
+        " OR "
+        " [refseq_accessions]  <> '" + r['seg_refseq' ] +"' OR [refseq_accessions] is NULL "
+        ")"
     )
     # final result
     return(sql)
