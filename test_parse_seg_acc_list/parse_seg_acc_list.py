@@ -125,15 +125,15 @@ def write_dict_to_tsv(merged_dict, file_name="parse_seg_acc_list.accessions_map.
     df.to_csv(file_name, sep='\t', index=False) #index_label='key')
 
 data = [
-    { "case":"acc_both_empty", "isolate_id":1003732, "gb_a":'', "rs_a":'' },
-    { "case":"acc_rs_missing", "isolate_id":1003732, "gb_a":'HM246720', "rs_a":'' },
-    { "case":"acc_gb_missing", "isolate_id":1003732, "gb_a":'', "rs_a":'NC_027989' },
-    { "case":"acc_single", "isolate_id":1003732, "gb_a":'HM246720', "rs_a":'NC_027989' },
-    { "case":"acc_list",   "isolate_id":1003732, "gb_a":'HM246720; HM246721; HM246722; HM246723; HM246724', "rs_a":'NC_027989; NC_041833; NC_041831; NC_041832; NC_041834' },
-    { "case":"seg_acc_single_matched", "isolate_id":1007556, "gb_a":'DNA-C: EF546812', "rs_a":'DNA-C: NC_010318'},
-    { "case":"seg_acc_single_mismatched", "isolate_id":1007556, "gb_a":'DNA-C: EF546812', "rs_a":'DNA-N: NC_010318'},
-    { "case":"seg_acc_single_ragged", "isolate_id":1007556, "gb_a":'DNA-C: EF546812', "rs_a":'DNA-C: NC_010318 ;  DNA-U3:     NC_010315'},
-    { "case":"seg_acc_list", "isolate_id":1007556, "gb_a":'DNA-C: EF546812; DNA-M: EF546811; DNA-N: EF546808; DNA-R: EF546813; DNA-S:EF546810; DNA-U3: EF546809', "rs_a":'DNA-C: NC_010318; DNA-M: NC_010317; DNA-N:NC_010314; DNA-R: NC_010319; DNA-S: NC_010316; DNA-U3:     NC_010315'}
+    { "case":"acc_both_empty", "isolate_id":1003732.1, "gb_a":'', "rs_a":'' },
+    { "case":"acc_rs_missing", "isolate_id":1003732.2, "gb_a":'HM246720', "rs_a":'' },
+    { "case":"acc_gb_missing", "isolate_id":1003732.3, "gb_a":'', "rs_a":'NC_027989' },
+    { "case":"acc_single", "isolate_id":1003732.4, "gb_a":'HM246720', "rs_a":'NC_027989' },
+    { "case":"acc_list",   "isolate_id":1003732.5, "gb_a":'HM246720; HM246721; HM246722; HM246723; HM246724', "rs_a":'NC_027989; NC_041833; NC_041831; NC_041832; NC_041834' },
+    { "case":"seg_acc_single_matched", "isolate_id":1007556.1, "gb_a":'DNA-C: EF546812', "rs_a":'DNA-C: NC_010318'},
+    { "case":"seg_acc_single_mismatched", "isolate_id":1007556.1, "gb_a":'DNA-C: EF546812', "rs_a":'DNA-N: NC_010318'},
+    { "case":"seg_acc_single_ragged", "isolate_id":1007556.3, "gb_a":'DNA-C: EF546812', "rs_a":'DNA-C: NC_010318 ;  DNA-U3:     NC_010315'},
+    { "case":"seg_acc_list", "isolate_id":1007556.4, "gb_a":'DNA-C: EF546812; DNA-M: EF546811; DNA-N: EF546808; DNA-R: EF546813; DNA-S:EF546810; DNA-U3: EF546809', "rs_a":'DNA-C: NC_010318; DNA-M: NC_010317; DNA-N:NC_010314; DNA-R: NC_010319; DNA-S: NC_010316; DNA-U3:     NC_010315'}
 ]
 
 meta_list = []
