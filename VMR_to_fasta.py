@@ -69,9 +69,11 @@ def load_VMR_data():
     try:
         raw_vmr_data = pandas.read_excel(args.VMR_file_name,engine='openpyxl')
         if args.verbose: print("VMR data loaded: {0} rows, {1} columns.".format(*raw_vmr_data.shape))
+        if args.verbose: print("\tcolumns: ",raw_vmr_data.columns)
+
 
         # list of the columns to extract from raw_vmr_data
-        vmr_cols_needed = ['Isolate ID','Exemplar or additional isolate','Sort','Isolate Sort','Virus GENBANK accession','Species','Genome coverage','Genus']
+        vmr_cols_needed = ['Isolate ID','Exemplar or additional isolate','Sort','Isolate Sort','Virus GENBANK accession','Virus REFSEQ accession','Species','Genome coverage','Genus']
 
         for col_name in list(raw_vmr_data.columns):
             if col_name in vmr_cols_needed:
@@ -132,40 +134,53 @@ def test_accession_IDs(df):
 # 4. Accession Numbers in the same block are seperated by a ; or a , or a :
 ##############################################################################################################
     # defining new DataFrame before hand
-    processed_accession_IDs = pandas.DataFrame(columns=['Isolate_ID','Species','Exemplar_Additional','Accession_IDs','segment',"Genus","Sort","Isolate Sort","Original_Accession_String","Errors"])
+    processed_accessions = pandas.DataFrame(columns=['Isolate_ID','Species','Exemplar_Additional','Accession_Index','Accession','Segment_Name',"Genus","Sort","Isolate_Sort","Original_GENBANK_Accessions","Original_REFSEQ_Accessions","Errors"])
     # for loop for every entry in given processed_accessionIDs
     for entry_count in range(0,len(df.index)):
-        # Find current isolate_id in this row (unique per row)
-        Isolate_ID=df['Isolate ID'][entry_count]
-        # Find current species in this row
-        Species=df['Species'][entry_count]
-        # Exemplar/Additional designation
-        Exemplar_Additional=df['Exemplar or additional isolate'][entry_count]
-        # Find current Genus in this row
-        Genus=df['Genus'][entry_count]
-        #initial processing of raw accession numbers.
-        orig_accession_str = df['Virus GENBANK accession'][entry_count]
-        #removing whitespace.
-        accession_ID = str(orig_accession_str).replace(" ","")
-        # instead of trying to split by commas and semicolons, I just replace the commas with semicolons. 
-        accession_ID.replace(",",";")
-        accession_ID = accession_ID.split(';')
+        #
+        # split accessions list (seporarated by ;  by , )
+        #
         
-        #split by colons too
-        accession_ID = [accession_part.split(':') for accession_part in accession_ID]
+ 
+        # get original list of accessions
+        accessions_str = str(df['Virus GENBANK accession'][entry_count])
+        # remove whitespace.
+        accessions_str = accessions_str.replace(" ","")
+        print("accessions_str.replace(' '):"+accessions_str)
+
+        # instead of trying to split by commas and semicolons, I just replace the commas with semicolons. 
+        accessions_str = accessions_str.replace(",",";")
+        print("accessions_str.replace(','):"+accessions_str)
+        accession_list = accessions_str.split(';')
+        print("accessions_list:"+"|".join(accession_list))
+        
+        #
+        # split optional "segment_name:" prefix on accessions
+        #
+        accession_list = [accession_part.split(':') for accession_part in accession_list]
     
-        # for loop for every ";" split done
-        for accession_seg in accession_ID:
-            segment = None
+        # 
+        # for each [SEG:]ACCESSION
+        # 
+        accession_index = 0
+        for seg_accession in accession_list:
+            # track accession/segment order, so it can be preserved
+            accession_index += 1
+            # we'll check later if this segment has a name 
+            segment_name = None
             errors= ""
+
             #flag long strings as being suspect. Most aren't 10 characters long. 
-            if len(accession_seg) > 10:
-                errors = 'suspiciously long accession number or segment name. Please verify its correct:'+str(accession_seg)
+            if len(seg_accession) > 10:
+                errors = 'suspiciously long accession number or segment name. Please verify its correct:'+str(seg_accession)
                 print(errors,file=sys.stderr)
 
-                # for loop for every ":" split done
-            for accession_part in accession_seg:
-                
+            # 
+            # parse optional [SEG_NAME:] prefix 
+            for accession_part in seg_accession:
+                # 
+                # detect ACCESSION
+                #
                 number_count = 0
                 letter_count = 0
                 # counting letters
@@ -177,17 +192,28 @@ def test_accession_IDs(df):
                         number_count = number_count+1
                 #checks if current selection fits what an accession number should be
                 if len(str(accession_part)) == 8 or 6 and letter_count<3 and number_count>3:
-                    processed_accession_ID = accession_part
-                    processed_accession_IDs.loc[len(processed_accession_IDs.index)] = [Isolate_ID,Species,Exemplar_Additional,processed_accession_ID,segment,Genus,
+                    processed_accession = accession_part
+                    processed_accessions.loc[len(processed_accessions.index)] = [
+                                                                                       df['Isolate ID'][entry_count],
+                                                                                       df['Species'][entry_count],
+                                                                                       df['Exemplar or additional isolate'][entry_count],
+                                                                                       accession_index,
+                                                                                       processed_accession,
+                                                                                       segment_name,
+                                                                                       df['Genus'][entry_count],
                                                                                        df['Sort'][entry_count],
                                                                                        df['Isolate Sort'][entry_count],
                                                                                        df['Virus GENBANK accession'][entry_count],
+                                                                                       df['Virus REFSEQ accession'][entry_count],
                                                                                        errors ]
-                    #print("'"+processed_accession_ID+"'"+' has been cleaned.')
+                    #print("'"+processed_accession+"'"+' has been cleaned.')
                 else:
-                    segment = accession_part
-    return processed_accession_IDs               
+                    # 
+                    # otherwise, must be a segment_name
+                    # 
+                    segment_name = accession_part
 
+    return processed_accessions
 
 #######################################################################################################################################
 # Utilizes Biopython's Entrez API to fetch FASTA data from Accession numbers. 
