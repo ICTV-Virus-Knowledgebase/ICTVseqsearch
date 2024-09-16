@@ -30,7 +30,7 @@ parser = argparse.ArgumentParser(description="")
 parser.add_argument('-verbose',help="printout details during run",action=argparse.BooleanOptionalAction)
 parser.add_argument('-tmi',help="printout Too Much Information during run",action=argparse.BooleanOptionalAction)
 parser.add_argument("-VMR_file_name",help="name of the VMR file to load.",default="VMRs/VMR_MSL39_v4/VMR_MSL39_v4c.xlsx")
-parser.add_argument("-map_file_name",help="name TSV mapping genbank to refseq.",default="genbank_refseq_map_wide_fixed2.txt")
+parser.add_argument("-map_file_name",help="name TSV mapping genbank to refseq.",default="genbank_refseq_map_wide_fixed3.txt")
 parser.add_argument("-ea",help="Fetch E or A records, or Both (Exemplars or AdditionalIsolates)", default="B")
 args = parser.parse_args()
 
@@ -40,6 +40,7 @@ if args.ea.lower() != "b":
     
 VMR_file_name_tsv = './vmr.tsv'
 processed_accession_file_name ="./processed_accessions_"+args.ea.lower()+".tsv"
+updated_accession_file_name   ="./processed_accessions_"+args.ea.lower()+".upd.tsv"
 
 
 ###############################################################################################################
@@ -97,6 +98,13 @@ def load_VMR_data():
 
     return raw_vmr_data
 
+###############################################################################################################
+#
+# Parse RefSeq and Genbank accession strings as parallel arrays
+#
+############################################################################################################### 
+# 
+#
 def parse_VMR_accessions(vmr_df):
 
     # Initialize an empty DataFrame to collect all the merged accessions
@@ -141,7 +149,7 @@ def load_accession_map():
     # Importing TSV as a DataFrame.
     try:
         # openfile
-        raw_map_data = pd.read_csv(args.map_file_name,sep="\t")
+        raw_map_data = pd.read_csv(args.map_file_name,sep="\t", index_col='genbank')
         if args.verbose: print("MAP data loaded: {0} rows, {1} columns.".format(*raw_map_data.shape))
         if args.verbose: print("\tcolumns: ",raw_map_data.columns)
 
@@ -164,6 +172,47 @@ def load_accession_map():
 
     return raw_map_data
 
+###############################################################################################################
+#
+# Update RefSeq accessions from Genbank-Refseq accession map
+#
+############################################################################################################### 
+# 
+#
+def update_acc_from_map(accessions_df, map_data):
+
+     # final df
+    updated_rs_df = pd.DataFrame()
+
+    # Iterate over each row in the DataFrame
+    for index, row in accessions_df.iterrows():
+       isolate_id       = row['isolate_id']
+       genbank_acc      = row['gb_accession']
+       refseq_acc       = row['rs_accession']
+
+       print("VMR row [{0}] '{1}', '{2}'".format(isolate_id, genbank_acc, refseq_acc))
+       # look up genbank in RefSeq map
+       if not genbank_acc in map_data.index:
+           print(f"Genbank accession '{genbank_acc}' not found in the map.")
+       else:
+           map_row = map_data.loc[genbank_acc]
+
+           if not pd.isna(map_row['#refseq']):
+               new_rs_acc = map_row['#refseq']
+               row['rs_accession'] = new_rs_acc
+               if new_rs_acc != refseq_acc:
+
+                   print("Updated [{0}] '{1}', '{2}'>>'{3}'".format(isolate_id, genbank_acc, refseq_acc, new_rs_acc))
+
+       updated_rs_df = pd.concat([updated_rs_df, row])
+
+    # write parsed accessions to TSV
+    pd.DataFrame.to_csv(updated_rs_df, updated_accession_file_name, sep='\t')
+    print("Wrote to ", updated_accession_file_name)
+    if args.verbose: print("   Wrote {0} rows, {1} columns.".format(*udpated_rs_df.shape))
+
+    return updated_rs_df
+
 
 def main():
     if args.verbose: print("main()")
@@ -171,11 +220,15 @@ def main():
     print("# load VMR: ")
     vmr_df = load_VMR_data()
 
-    print("# parse VMR accessions: ")
-    accessions_df = parse_VMR_accessions(vmr_df)
-    
     print("# load map: ")
     map_data = load_accession_map()
+
+    print("# parse VMR accessions: ")
+    accessions_df = parse_VMR_accessions(vmr_df)
+
+    print("# update refseqs: ")
+    updated_acc_df = update_acc_from_map(accessions_df, map_data)
+    
 
 main()
 
