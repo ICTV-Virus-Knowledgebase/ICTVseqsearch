@@ -41,9 +41,10 @@ if args.ea.lower() != "b":
     exit(1)
     
 VMR_file_name_tsv = './vmr.tsv'
-VMR_updated_file_name_tsv = './vmr.updated.tsv'
-processed_accession_file_name ="./processed_accessions_"+args.ea.lower()+".tsv"
-updated_accession_file_name   ="./processed_accessions_"+args.ea.lower()+".upd.tsv"
+VMR_updated_file_name_tsv  = './vmr.updated.tsv'
+VMR_updated_file_name_xlsx = './vmr.updated.xlsx'
+processed_accession_file_name     ="./processed_accessions_"+args.ea.lower()+".tsv"
+updated_accession_file_name_tsv   ="./processed_accessions_"+args.ea.lower()+".upd.tsv"
 
 
 ###############################################################################################################
@@ -295,8 +296,8 @@ def main():
 
     print("# collapse per isolate: ")
     isolates_updated_df = collapse_acc_list_to_isolates(updated_acc_df)
-    if args.verbose: print("Writing: ", updated_accession_file_name )
-    pd.DataFrame.to_csv(isolates_updated_df, updated_accession_file_name, sep="\t", index=False)
+    if args.verbose: print("Writing: ", updated_accession_file_name_tsv )
+    pd.DataFrame.to_csv(isolates_updated_df, updated_accession_file_name_tsv, sep="\t", index=False)
     if args.verbose: print("   Wrote {0} rows, {1} columns.".format(*isolates_updated_df.shape))
 
     print("# update refseq in VMR: ")
@@ -304,7 +305,9 @@ def main():
 
     print("# write updated VMR to TSV:")
     if args.verbose: print("Writing: ", VMR_updated_file_name_tsv )
-    pd.DataFrame.to_csv(vmr_updated_df, VMR_updated_file_name_tsv, sep="\t", index=False)
+    pd.DataFrame.to_csv(vmr_updated_df, VMR_updated_file_name_tsv,  index=False, sep="\t")
+    if args.verbose: print("Writing: ", VMR_updated_file_name_xlsx )
+    vmr_updated_df.to_excel(            VMR_updated_file_name_xlsx, index=False)
     if args.verbose: print("   Wrote {0} rows, {1} columns.".format(*vmr_updated_df.shape))
 
 main()
