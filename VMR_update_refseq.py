@@ -21,6 +21,8 @@ import re
 import sys
 import os
 import pathlib # for stem=basename(.txt)
+from natsort import natsorted
+from natsort import natsort_keygen
 # my utilities
 from accession_utils import parse_seg_accession_list, merge_acc_dicts
 
@@ -39,6 +41,7 @@ if args.ea.lower() != "b":
     exit(1)
     
 VMR_file_name_tsv = './vmr.tsv'
+VMR_updated_file_name_tsv = './vmr.updated.tsv'
 processed_accession_file_name ="./processed_accessions_"+args.ea.lower()+".tsv"
 updated_accession_file_name   ="./processed_accessions_"+args.ea.lower()+".upd.tsv"
 
@@ -149,7 +152,7 @@ def load_accession_map():
     # Importing TSV as a DataFrame.
     try:
         # openfile
-        raw_map_data = pd.read_csv(args.map_file_name,sep="\t", index_col='genbank')
+        raw_map_data = pd.read_csv(args.map_file_name,sep="\t")#, index_col='genbank')
         if args.verbose: print("MAP data loaded: {0} rows, {1} columns.".format(*raw_map_data.shape))
         if args.verbose: print("\tcolumns: ",raw_map_data.columns)
 
@@ -181,38 +184,99 @@ def load_accession_map():
 #
 def update_acc_from_map(accessions_df, map_data):
 
-     # final df
-    updated_rs_df = pd.DataFrame()
+    # merge (outer left join) with map
+    acc_mapped_df = pd.merge(accessions_df, map_data, left_on='gb_accession', right_on='genbank', how='outer', indicator=True)
 
-    # Iterate over each row in the DataFrame
-    for index, row in accessions_df.iterrows():
-       isolate_id       = row['isolate_id']
-       genbank_acc      = row['gb_accession']
-       refseq_acc       = row['rs_accession']
 
-       print("VMR row [{0}] '{1}', '{2}'".format(isolate_id, genbank_acc, refseq_acc))
-       # look up genbank in RefSeq map
-       if not genbank_acc in map_data.index:
-           print(f"Genbank accession '{genbank_acc}' not found in the map.")
-       else:
-           map_row = map_data.loc[genbank_acc]
+    # update the 'rs_accession' and ' column, if the map provides a new value
+    acc_mapped_df['rs_accession'] = acc_mapped_df['rs_accession'].where(acc_mapped_df['#refseq'].isna() | (acc_mapped_df['#refseq'] == ""   ), acc_mapped_df['#refseq'])
 
-           if not pd.isna(map_row['#refseq']):
-               new_rs_acc = map_row['#refseq']
-               row['rs_accession'] = new_rs_acc
-               if new_rs_acc != refseq_acc:
+    # update the rs_taxid - coming soon! TBD
+    #acc_mapped_df['rs_taxid']     = acc_mapped_df['rs_taxid'].where(acc_mapped_df['ncbi_taxid'].isna()  or (acc_mapped_df['ncbi_taxid'] == ""), acc_mapped_df['ncbi_taxid'])
 
-                   print("Updated [{0}] '{1}', '{2}'>>'{3}'".format(isolate_id, genbank_acc, refseq_acc, new_rs_acc))
+    return acc_mapped_df[accessions_df.columns]
 
-       updated_rs_df = pd.concat([updated_rs_df, row])
+# Define a function to concatenate segment and refseq values
+def format_seg_acc(seg,acc):
+    if seg != seg or pd.isna(seg): 
+        if acc != acc  or pd.isna(acc): 
+            return None
+        else:
+            return str(acc)
+    if acc != acc or pd.isna(acc):
+        return str(seg)+': '
+    else:
+        return str(seg)+': '+str(acc)
 
-    # write parsed accessions to TSV
-    pd.DataFrame.to_csv(updated_rs_df, updated_accession_file_name, sep='\t')
-    print("Wrote to ", updated_accession_file_name)
-    if args.verbose: print("   Wrote {0} rows, {1} columns.".format(*udpated_rs_df.shape))
+# chose '' if all accessions are '', else choose the list
+def select_refseq_empty_or_list(uct,acc,seg_acc_list):
+    if uct > 1:
+        return seg_acc_list
+    if  acc=='' or acc!=acc:
+        return ''
+    return seg_acc_list
 
-    return updated_rs_df
 
+def collapse_acc_list_to_isolates(accessions_df):
+    print("collapse_acc_list_to_isolates(accessions_df):")
+    print("\tColumns: ", accessions_df.columns)
+    
+    # format [seg:]accession
+    accessions_df['seg_genbank']=    accessions_df.apply(lambda r: format_seg_acc(r['segment_name'],r['gb_accession']),axis=1)
+    accessions_df['seg_refseq']=     accessions_df.apply(lambda r: format_seg_acc(r['segment_name'],r['rs_accession']), axis=1)
+    #accessions_df['seg_ncbi_taxid']= accessions_df(lambda r: format_seg_acc(r['segment_name'],r['rs_taxid']), axis=1)
+
+    def join_sorted_values(sub_df):
+        #print("sub_df:------------------\n", sub_df)
+        # Sort by 'accession_index' and 'segment_name'
+        sorted_sub_df = sub_df.sort_values(by=['accession_index', 'segment_name']
+                                           ,key=natsort_keygen()
+                                           )
+
+        #print("sorted_sub_df:-----------\n", sorted_sub_df)
+        # Join the sorted values of 'seg_genbank' and 'seg_refseq'
+        seg_genbank_joined = '; '.join(sorted_sub_df['seg_genbank'].dropna().astype(str))
+        # Check if all values in 'rs_accession' are None
+        if pd.isna(sorted_sub_df['rs_accession']).all():
+            seg_refseq_joined = None
+        else:
+            seg_refseq_joined = '; '.join(sorted_sub_df['seg_refseq'].dropna().astype(str))
+        #print("\tseg_genbank_joined: ", seg_genbank_joined)
+        #print("\tseg_refseq_joined: ", seg_refseq_joined)
+        
+        return pd.Series({'seg_genbank':seg_genbank_joined, 'seg_refseq':seg_refseq_joined})
+
+    # Group by 'isolate_id' and apply the join_sorted_values function
+    grouped_df = accessions_df.groupby('isolate_id').apply(join_sorted_values).reset_index()
+
+    # Rename columns back to VMR standard for clarity
+    grouped_df.rename(columns={
+        'isolate_id': 'Isolate ID',
+        'seg_genbank': 'Virus GENBANK accession',
+        'seg_refseq': 'Virus REFSEQ accession'
+    }, inplace=True)
+
+    # return
+    return(grouped_df)
+    
+def update_vmr_with_refseq(vmr_df,isolates_updated_refseq_df):
+    print("#update_vmr_with_refseq(vmr_df,isolates_updated_refseq_df):")
+    print("\tvmr_df: ", vmr_df.columns)
+    print("\tisolates_updated_refseq_df: ", isolates_updated_refseq_df.columns)
+    
+    # Merge the two DataFrames on "Isolate ID" with "left" join to preserve all rows in vmr_df
+    merged_df = vmr_df.merge(
+        isolates_updated_refseq_df[['Isolate ID', 'Virus REFSEQ accession']],
+        on='Isolate ID',
+        how='left',
+        suffixes=('', '_updated')
+    )
+    
+    # Update the "Virus REFSEQ accession" in vmr_df with the values from the merged DataFrame
+    vmr_df['Virus REFSEQ accession'] = merged_df['Virus REFSEQ accession_updated'].fillna(vmr_df['Virus REFSEQ accession'])
+    
+    return vmr_df
+    
 
 def main():
     if args.verbose: print("main()")
@@ -228,7 +292,20 @@ def main():
 
     print("# update refseqs: ")
     updated_acc_df = update_acc_from_map(accessions_df, map_data)
-    
+
+    print("# collapse per isolate: ")
+    isolates_updated_df = collapse_acc_list_to_isolates(updated_acc_df)
+    if args.verbose: print("Writing: ", updated_accession_file_name )
+    pd.DataFrame.to_csv(isolates_updated_df, updated_accession_file_name, sep="\t", index=False)
+    if args.verbose: print("   Wrote {0} rows, {1} columns.".format(*isolates_updated_df.shape))
+
+    print("# update refseq in VMR: ")
+    vmr_updated_df = update_vmr_with_refseq(vmr_df, isolates_updated_df)
+
+    print("# write updated VMR to TSV:")
+    if args.verbose: print("Writing: ", VMR_updated_file_name_tsv )
+    pd.DataFrame.to_csv(vmr_updated_df, VMR_updated_file_name_tsv, sep="\t", index=False)
+    if args.verbose: print("   Wrote {0} rows, {1} columns.".format(*vmr_updated_df.shape))
 
 main()
 
