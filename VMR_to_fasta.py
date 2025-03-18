@@ -85,7 +85,7 @@ def load_VMR_data():
             if args.verbose: print("\tcolumns: ",raw_vmr_data.columns)
 
             # list of the columns to extract from raw_vmr_data
-            vmr_cols_needed = ['Isolate ID','Exemplar or additional isolate','Species Sort','Isolate Sort','Virus GENBANK accession','Virus REFSEQ accession','Species','Genome coverage','Genus']
+            vmr_cols_needed = ['Isolate ID','Exemplar or additional isolate','Species Sort','Isolate Sort','Virus GENBANK accession','Species','Genome coverage','Genus']
             
             for col_name in list(raw_vmr_data.columns):
                 if col_name in vmr_cols_needed:
@@ -147,7 +147,7 @@ def test_accession_IDs(df):
 # 4. Accession Numbers in the same block are seperated by a ; or a , or a :
 ##############################################################################################################
     # defining new DataFrame before hand
-    processed_accessions = pandas.DataFrame(columns=['Isolate_ID','Species','Exemplar_Additional','Accession_Index','Accession','Segment_Name',"Genus","Sort","Isolate_Sort","Original_GENBANK_Accessions","Original_REFSEQ_Accessions","Errors"])
+    processed_accessions = pandas.DataFrame(columns=['Isolate_ID','Species','Exemplar_Additional','Accession_Index','Accession','Segment_Name',"Genus","Sort","Isolate_Sort","Original_GENBANK_Accessions","Errors"])
     # for loop for every entry in given processed_accessionIDs
     for entry_count in range(0,len(df.index)):
         #
@@ -217,7 +217,6 @@ def test_accession_IDs(df):
                                                                                        df['Species Sort'][entry_count],
                                                                                        df['Isolate Sort'][entry_count],
                                                                                        df['Virus GENBANK accession'][entry_count],
-                                                                                       df['Virus REFSEQ accession'][entry_count],
                                                                                        errors ]
                     #print("'"+processed_accession+"'"+' has been cleaned.')
                 else:
@@ -429,7 +428,7 @@ def main():
         
         if args.verbose: print("Writing", processed_accession_file_name)
         if args.verbose: print("\tColumn: ", tested_accessions_ids.columns)
-        pandas.DataFrame.to_csv(tested_accessions_ids,processed_accession_file_name,sep='\t')
+        pandas.DataFrame.to_csv(tested_accessions_ids,processed_accession_file_name,sep='\t',index=False)
 
     if args.mode == "fasta" or None:
         print("# pull FASTAs from NCBI")
