@@ -269,12 +269,12 @@ def fetch_fasta(processed_accession_file_name):
 
     # Fetches FASTA data for every accession number
     count = 0
-    for accession_ID in Accessions['Accession_IDs']:
+    for accession_ID in Accessions['Accession']:
             row = Accessions.loc[count]
-            Isolate_ID   = row.iloc[1]
-            Species      = row.iloc[2]
-            Isolate_type = row.iloc[3]
-            accession_ID = row.iloc[4]
+            Isolate_ID   = row.iloc[0]
+            Species      = row.iloc[1]
+            Isolate_type = row.iloc[2]
+           # accession_ID = row.iloc[4]
             segment      = row.iloc[5]
             genus_name   = row.iloc[6]
             if args.verbose: print("Fetch [",count,"] ID:",Isolate_ID," Species:",Species," Segment:",segment," Accession:",accession_ID)
@@ -286,7 +286,7 @@ def fetch_fasta(processed_accession_file_name):
                 genus_name = ""
                 
             # fasta_file_name
-            genus_dir = fasta_dir+"/"+genus_name
+            genus_dir = fasta_dir+"/"+str(genus_name)
             if genus_name == "":
                 genus_dir = fasta_dir+"/"+"no_genus"
             accession_raw_file_name = genus_dir+"/"+str(accession_ID)+".raw"
