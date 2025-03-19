@@ -38,7 +38,7 @@ To create conda environments:
 
   To download fasta data from NCBI:
   
-    ./VMR_to_fasta.py -mode fasta -ea [E|A|B] -fasta_file_name [PATH_TO_EXCEL.xlsx]
+    ./VMR_to_fasta.py -mode fasta -ea [E|A|B] -email [your_email]
     
   TODO: Fix db mode. 
 
