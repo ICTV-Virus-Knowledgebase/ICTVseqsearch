@@ -147,7 +147,7 @@ def test_accession_IDs(df):
 # 4. Accession Numbers in the same block are seperated by a ; or a , or a :
 ##############################################################################################################
     # defining new DataFrame before hand
-    processed_accessions = pandas.DataFrame(columns=['Isolate_ID','Species','Exemplar_Additional','Accession_Index','Accession','Segment_Name',"Genus","Sort","Isolate_Sort","Original_GENBANK_Accessions","Errors"])
+    processed_accessions = pandas.DataFrame(columns=['Isolate_ID','Species','Exemplar_Additional','Accession_Index','Accession','Segment_Name',"Genus","Sort","Isolate_Sort","Original_GENBANK_Accessions","Errors","Start","End"])
     # for loop for every entry in given processed_accessionIDs
     for entry_count in range(0,len(df.index)):
         #
@@ -203,9 +203,20 @@ def test_accession_IDs(df):
                 # counting numbers
                     elif char in '1234567890':
                         number_count = number_count+1
+                
+                pat= r'(\w+)\s*\((\d+)(\.)(\w+)(\))'
                 #checks if current selection fits what an accession number should be
                 if len(str(accession_part)) == 8 or 6 and letter_count<3 and number_count>3:
-                    processed_accession = accession_part
+                    start_acc=""
+                    end_acc=""
+                    # check for accessions followed by (INT,INT) 
+                    re_result=re.match(pat, accession_part)
+                    if re_result:
+                        processed_accession= re_result.group(1)
+                        start_acc= re_result.group(2)
+                        end_acc= re_result.group(4)
+                    else:
+                        processed_accession = accession_part
                     processed_accessions.loc[len(processed_accessions.index)] = [
                                                                                        df['Isolate ID'][entry_count],
                                                                                        df['Species'][entry_count],
@@ -217,7 +228,9 @@ def test_accession_IDs(df):
                                                                                        df['Species Sort'][entry_count],
                                                                                        df['Isolate Sort'][entry_count],
                                                                                        df['Virus GENBANK accession'][entry_count],
-                                                                                       errors ]
+                                                                                       errors, 
+                                                                                       start_acc,  
+                                                                                       end_acc ]
                     #print("'"+processed_accession+"'"+' has been cleaned.')
                 else:
                     # 
