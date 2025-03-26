@@ -98,7 +98,7 @@ def load_VMR_data():
             if args.verbose: print("\tcolumns: ",raw_vmr_data.columns)
 
             # list of the columns to extract from raw_vmr_data
-            vmr_cols_needed = ['Isolate ID','Exemplar or additional isolate','Species Sort','Isolate Sort','Virus GENBANK accession','Virus REFSEQ accession','Species','Genome coverage','Genus']
+            vmr_cols_needed = ['Isolate ID','Exemplar or additional isolate','Species Sort','Isolate Sort','Virus GENBANK accession','Species','Genome coverage','Genus']
             
             for col_name in list(raw_vmr_data.columns):
                 if col_name in vmr_cols_needed:
@@ -153,6 +153,7 @@ def load_VMR_data():
     if args.verbose: print("   Truncated: {0} rows, {1} columns.".format(*narrow_vmr_data.shape))
     
     return narrow_vmr_data
+
 #insert(parse_seg_accession_list)
 def parse_seg_accession_list(isolate_id,acc_list_str):
     # remove whitespace.
@@ -168,7 +169,7 @@ def parse_seg_accession_list(isolate_id,acc_list_str):
     # 
     # for each [SEG:]ACCESSION
     # 
-    sa_dict = {} # seg_name-accession map
+    result_arr = [] # list of seg_name-accession maps
     accession_index = 0
     for seg_acc_str in accession_list:
         if True or args.tmi: print("seg_acc_str:"+seg_acc_str)
@@ -186,14 +187,14 @@ def parse_seg_accession_list(isolate_id,acc_list_str):
             if len(seg_acc_pair)==1:
                 # bare accession
                 accession = seg_acc_pair[0]
-                sa_dict[accession_index] = {"accession":accession, "segment_name":None, "accession_index":accession_index, "isolate_id":isolate_id}
-                if True or args.tmi: print("sa_dict["+str(accession_index)+"]:"+str(sa_dict[accession_index]))
+                result_arr.append({"accession":accession, "segment_name":None, "accession_index":accession_index, "isolate_id":isolate_id})
+                if True or args.tmi: print("result_arr["+str(accession_index)+"]:"+str(result_arr[accession_index-1]))
             elif len(seg_acc_pair)==2:
                 # seg_name:accession
                 segment_name = seg_acc_pair[0]
                 accession = seg_acc_pair[1]
-                sa_dict[segment_name] = {"accession":accession, "segment_name":segment_name, "accession_index":accession_index, "isolate_id":isolate_id}
-                if True or args.tmi: print("sa_dict["+str(segment_name)+"]:"+str(sa_dict[segment_name]))
+                result_arr.append({"accession":accession, "segment_name":segment_name, "accession_index":accession_index, "isolate_id":isolate_id})
+                if True or args.tmi: print("result_arr["+str(accession_index)+"]:"+str(result_arr[accession_index-1]))
 
             # QC accessions
             number_count = 0
@@ -211,7 +212,7 @@ def parse_seg_accession_list(isolate_id,acc_list_str):
 
                 
     # we'll check later if this segment has a name 
-    return(sa_dict)
+    return(result_arr)
 #
 # test cases
 #
@@ -233,46 +234,45 @@ def test_accession_IDs(df):
 # 4. Accession Numbers in the same block are seperated by a ; or a , or a :
 ##############################################################################################################
     # defining new DataFrame before hand
-    processed_accessions = pandas.DataFrame(columns=['Isolate_ID','Species','Exemplar_Additional','Accession_Index','Accession','Segment_Name',"Genus","Sort","Isolate_Sort","Original_GENBANK_Accessions","Original_REFSEQ_Accessions","Errors"])
+    processed_accessions = pandas.DataFrame(columns=['Isolate_ID','Species','Exemplar_Additional','Accession_Index','Accession','Segment_Name',"Genus","Sort","Isolate_Sort","Original_GENBANK_Accessions","Errors"])
     # for loop for every entry in given processed_accessionIDs
     for entry_count in range(0,len(df.index)):
         #
         # split accessions list (seporarated by ;  by , )
         #
         
- 
+        isolate_id_str = str(df['Isolate ID'][entry_count])
         # get original list of accessions
         gb_accessions_str = str(df['Virus GENBANK accession'][entry_count])
-        rs_accessions_str = str(df['Virus REFSEQ accession'][entry_count])
+        #rs_accessions_str = str(df['Virus REFSEQ accession'][entry_count])
 
         # parse
-        gb_accessions_dict = parse_seg_accession_list(gb_accessions_str)
-        rs_accessions_dict = parse_seg_accession_list(rs_accessions_str)
+        gb_accessions_dict = parse_seg_accession_list(isolate_id_str,gb_accessions_str)
+        #rs_accessions_dict = parse_seg_accession_list(rs_accessions_str)
 
         # merge parallel lists (not nice)
-        if len(gb_accessions_dict) != rs_accessions_dict:
-            print("WARNING[isolate:"+str(isolate_id)+"]: gb_n_acc: "+str(len(gb_accessions_dict))+" != rs_n_acc:"+str(len(rs_accessions_dict)),file=sys.stderr)
+        #if len(gb_accessions_dict) != rs_accessions_dict:
+        #   print("WARNING[isolate:"+str(isolate_id)+"]: gb_n_acc: "+str(len(gb_accessions_dict))+" != rs_n_acc:"+str(len(rs_accessions_dict)),file=sys.stderr)
 
- 
+
+        # iterate over accessions
+        for acc_dict in gb_accessions_dict:
+
             processed_accessions.loc[len(processed_accessions.index)] = [
-                        df['Isolate ID'][entry_count],
-                        df['Species'][entry_count],
-                        df['Exemplar or additional isolate'][entry_count],
-                        accession_index,
-                        processed_accession,
-                        segment_name,
-                        df['Genus'][entry_count],
-                        df['Species Sort'][entry_count],
-                        df['Isolate Sort'][entry_count],
-                        df['Virus GENBANK accession'][entry_count],
-                        df['Virus REFSEQ accession'][entry_count],
-                        errors ]
-                    #print("'"+processed_accession+"'"+' has been cleaned.')
-        else:
-                    # 
-                    # otherwise, must be a segment_name
-                    # 
-                    segment_name = accession_part
+                df['Isolate ID'][entry_count],
+                df['Species'][entry_count],
+                df['Exemplar or additional isolate'][entry_count],
+                acc_dict["accession_index"],
+                acc_dict["accession"],
+                acc_dict["segment_name"],
+                df['Genus'][entry_count],
+                df['Species Sort'][entry_count],
+                df['Isolate Sort'][entry_count],
+                df['Virus GENBANK accession'][entry_count],
+                #            df['Virus REFSEQ accession'][entry_count],
+                "" # errors            
+            ]
+            #print("'"+processed_accession+"'"+' has been cleaned.')
 
     return processed_accessions
 
@@ -318,12 +318,12 @@ def fetch_fasta(processed_accession_file_name):
 
     # Fetches FASTA data for every accession number
     count = 0
-    for accession_ID in Accessions['Accession_IDs']:
+    for accession_ID in Accessions['Accession']:
             row = Accessions.loc[count]
-            Isolate_ID   = row.iloc[1]
-            Species      = row.iloc[2]
-            Isolate_type = row.iloc[3]
-            accession_ID = row.iloc[4]
+            Isolate_ID   = row.iloc[0]
+            Species      = row.iloc[1]
+            Isolate_type = row.iloc[2]
+           # accession_ID = row.iloc[4]
             segment      = row.iloc[5]
             genus_name   = row.iloc[6]
             if args.verbose: print("Fetch [",count,"] ID:",Isolate_ID," Species:",Species," Segment:",segment," Accession:",accession_ID)
@@ -335,7 +335,7 @@ def fetch_fasta(processed_accession_file_name):
                 genus_name = ""
                 
             # fasta_file_name
-            genus_dir = fasta_dir+"/"+genus_name
+            genus_dir = fasta_dir+"/"+str(genus_name)
             if genus_name == "":
                 genus_dir = fasta_dir+"/"+"no_genus"
             accession_raw_file_name = genus_dir+"/"+str(accession_ID)+".raw"
@@ -477,7 +477,7 @@ def main():
         
         if args.verbose: print("Writing", processed_accession_file_name)
         if args.verbose: print("\tColumn: ", tested_accessions_ids.columns)
-        pandas.DataFrame.to_csv(tested_accessions_ids,processed_accession_file_name,sep='\t')
+        pandas.DataFrame.to_csv(tested_accessions_ids,processed_accession_file_name,sep='\t',index=False)
 
     if args.mode == "fasta" or None:
         print("# {0} pull FASTAs from NCBI".format(formatElapsedTime()))

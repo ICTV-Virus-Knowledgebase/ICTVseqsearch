@@ -1,0 +1,15 @@
+Isolate_ID	Species	Exemplar_Additional	Accession_Index	Accession	Segment_Name	Genus	Sort	Isolate_Sort	Original_GENBANK_Accessions	Errors
+VMR1001950	Kayvirus G1	E	1	AY954969		Kayvirus	2673	1	AY954969	
+VMR1024988	Keyvirus AAS21	E	1	MK770119		Keyvirus	2253	1	MK770119	
+VMR1024989	Keyvirus key	E	1	MZ616364		Keyvirus	2254	1	MZ616364	
+VMR1004210	Mimivirus bradfordmassiliense	E	1	HQ336222		Mimivirus	15476	1	HQ336222	
+VMR1027988	Zirakzivirus serni	E	1	KT732816		Zirakzivirus	7395	1	KT732816; KT732815; KT732817	
+VMR1027988	Zirakzivirus serni	E	2	KT732815		Zirakzivirus	7395	1	KT732816; KT732815; KT732817	
+VMR1027988	Zirakzivirus serni	E	3	KT732817		Zirakzivirus	7395	1	KT732816; KT732815; KT732817	
+VMR1011336	Phlebovirus candiruense	A	1	HM119428	L	Phlebovirus	13851	6	L: HM119428; M: HM119429; S: HM119430	
+VMR1011336	Phlebovirus candiruense	A	2	HM119429	M	Phlebovirus	13851	6	L: HM119428; M: HM119429; S: HM119430	
+VMR1011336	Phlebovirus candiruense	A	3	HM119430	S	Phlebovirus	13851	6	L: HM119428; M: HM119429; S: HM119430	
+VMR1028127	Wargodvirus xiongnu	E	1	PP467602		Wargodvirus	1	1	PP467602	
+VMR1004862	Alphabaculovirus helarmigerae	E	1	AF271059		Alphabaculovirus	15762	1	AF271059	
+VMR1012174	Alphabaculovirus helarmigerae	A	1	AF303045		Alphabaculovirus	15762	2	AF303045	
+VMR1012175	Alphabaculovirus helarmigerae	A	1	AP010907		Alphabaculovirus	15762	3	AP010907	

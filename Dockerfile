@@ -13,7 +13,7 @@
 FROM ubuntu:22.04
 
 # make sure installs dont hang on user input
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
 
 # install r-base and pre-requisitis
@@ -60,10 +60,10 @@ COPY blast/ ./blast/
 #!/usr/bin/env bash
 #
 RUN find ./blast/
-COPY processed_accessions_e.tsv ./
-COPY processed_accessions_a.tsv ./
-COPY fixed_vmr_a.tsv ./
-COPY fixed_vmr_e.tsv ./
+COPY processed_accessions_b.tsv ./
+#COPY processed_accessions_a.tsv ./
+#COPY fixed_vmr_a.tsv ./
+#COPY fixed_vmr_e.tsv ./
 
 # what does ENTRYPOINT do exactly?
 # ENTRYPOINT fixed the base command; immutable

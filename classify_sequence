@@ -17,12 +17,14 @@ parser.add_argument('-verbose',help="print details during run",action=argparse.B
 parser.add_argument('-indir',help="directory for fasta files with NUCLEOTIDE seqeunces to classify",default="seq_in")
 parser.add_argument('-outdir',help="output directory for tax_results.json",default="tax_out")
 parser.add_argument('-json',help="output json filename",default="tax_results.json")
+parser.add_argument('-html',help="output  html base filename",default="tax_results")
 args = parser.parse_args()
 
 print("Hello World")
 print("IN_DIR: ", args.indir)
 print("OUT_DIR:", args.outdir)
 print("OUT_JSON:", args.json)
+print("OUT_HTML:", args.html)
 
 #
 # read version number
@@ -43,7 +45,8 @@ out_dict = {
             "input_seq"              : "test_seq_1",
             "status"                 : "CLASSIFIED",
             "classification_rank"    : "species",
-            "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"WorldGenus", "species":"WorldGenus specius"}
+            "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"WorldGenus", "species":"WorldGenus specius"},
+            "blast_htmls"             : { "blast_results": args.html+'_1.html' }
         }
         ,
         {
@@ -52,27 +55,58 @@ out_dict = {
             "status"                 : "CLASSIFIED",
             "classification_rank"    : "genus",
             "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"CountryGenus"},
-            "message"                : "Homologous to species within the genus, but not close enough to classify within an existing species"
-        }
-        ,
-        {
-            "input_file"             : "test3.fasta",
-            "input_seq"              : "test_seq_3",
-            "status"                 : "FAILED",
-            "error"                  : "Sequence did not have 0.5% or more of it's sequence homologous to a reference species"
+            "message"                : "Homologous to species within the genus, but not close enough to classify within an existing species",
+            "blast_htmls"             : { "blast_results": args.html+'_2.html' }
         }
     ]
 }
+
+html_hello_world_pre = """<HTML>
+<HEADER><TITLE>hello world HTML"""
+
+html_hello_world_mid = """</TITLE></HEADER>
+<BODY>
+<H>Hello</H>
+<I>world"""
+
+html_hello_world_post = """</I>
+</BODY>
+</HTML>"""
+
+def concatenate_html(str_val):
+    
+    return html_hello_world_pre + str_val + html_hello_world_mid + str_val + html_hello_world_post
+
 
 #
 # write output/results
 #
 
-outpath=os.path.join(args.outdir, args.json)
-with open(outpath, "w") as outfile:
-    json.dump(obj=out_dict, fp=outfile, indent=4)
+# Ensure the output directory exists
+os.makedirs(args.outdir, exist_ok=True)
 
-print("Wrote: ", outpath)
+# seq 1 blast html output
+html_1_outpath=os.path.join(args.outdir, args.html+'_1.html')
+with open(html_1_outpath, "w") as outfile:
+    outfile.write(concatenate_html("1"))
+print("Wrote: ", html_1_outpath)
+outfile.close()
+
+# seq 2 blast html output
+html_2_outpath=os.path.join(args.outdir, args.html+'_2.html')
+with open(html_2_outpath, "w") as outfile:
+    outfile.write(concatenate_html("2"))
+print("Wrote: ", html_2_outpath)
+outfile.close()
+
+# json job output/summary
+json_outpath=os.path.join(args.outdir, args.json)
+with open(json_outpath, "w") as outfile:
+    json.dump(obj=out_dict, fp=outfile, indent=4)
+print("Wrote: ", json_outpath)
+outfile.close()
+
+
 
 exit(0)
 
