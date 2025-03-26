@@ -21,7 +21,7 @@ def formatElapsedTime():
     return f"[{hours:02d}h{minutes:02d}m{seconds:02d}s]"
 
 print("# {0} Importing python packages: please wait...".format(formatElapsedTime()))
-import pandas
+import pandas as pd
 import subprocess
 from urllib import error
 import argparse
@@ -82,7 +82,7 @@ def load_VMR_data():
     # Importing excel sheet as a DataFrame. Requires xlrd and openpyxl package
     try:
         # open excel file
-        vmr_excel = pandas.ExcelFile(args.VMR_file_name,engine='openpyxl')
+        vmr_excel = pd.ExcelFile(args.VMR_file_name,engine='openpyxl')
         if args.verbose: print("\tOpened VMR Excel file: with {0} sheets: {1}".format(len(vmr_excel.sheet_names),args.VMR_file_name))
 
         # find first sheet matching "^VMR MSL"
@@ -93,7 +93,7 @@ def load_VMR_data():
             raise ValueError("No worksheet name matching the pattern '^VMR MSL' found.")
             raise SystemExit(1)
         else:
-            raw_vmr_data = pandas.read_excel(args.VMR_file_name,sheet_name=sheet_name,engine='openpyxl')
+            raw_vmr_data = pd.read_excel(args.VMR_file_name,sheet_name=sheet_name,engine='openpyxl')
             if args.verbose: print("VMR data loaded: {0} rows, {1} columns.".format(*raw_vmr_data.shape))
             if args.verbose: print("\tcolumns: ",raw_vmr_data.columns)
 
@@ -146,7 +146,7 @@ def load_VMR_data():
     
     vmr_data.to_csv(VMR_hack_file_name, sep='\t')
     if args.verbose: print("Loading",VMR_hack_file_name)
-    narrow_vmr_data = pandas.read_csv(VMR_hack_file_name,sep='\t')
+    narrow_vmr_data = pd.read_csv(VMR_hack_file_name,sep='\t')
     if args.verbose: print("   Read {0} rows, {1} columns.".format(*narrow_vmr_data.shape))
     if args.verbose: print("   columns:", list(narrow_vmr_data.columns))
 
@@ -164,7 +164,7 @@ def parse_seg_accession_list(isolate_id,acc_list_str):
 
     # split into list: ";" 
     accession_list = acc_list_str.split(';')
-    if True or args.tmi: print("accession_list:"+"|".join(accession_list))
+    if args.tmi: print("accession_list:"+"|".join(accession_list))
 
     # 
     # for each [SEG:]ACCESSION
@@ -172,7 +172,7 @@ def parse_seg_accession_list(isolate_id,acc_list_str):
     result_arr = [] # list of seg_name-accession maps
     accession_index = 0
     for seg_acc_str in accession_list:
-        if True or args.tmi: print("seg_acc_str:"+seg_acc_str)
+        if args.tmi: print("seg_acc_str:"+seg_acc_str)
 
         # track accession/segment order, so it can be preserved
         accession_index += 1
@@ -188,13 +188,13 @@ def parse_seg_accession_list(isolate_id,acc_list_str):
                 # bare accession
                 accession = seg_acc_pair[0]
                 result_arr.append({"accession":accession, "segment_name":None, "accession_index":accession_index, "isolate_id":isolate_id})
-                if True or args.tmi: print("result_arr["+str(accession_index)+"]:"+str(result_arr[accession_index-1]))
+                if args.tmi: print("result_arr["+str(accession_index)+"]:"+str(result_arr[accession_index-1]))
             elif len(seg_acc_pair)==2:
                 # seg_name:accession
                 segment_name = seg_acc_pair[0]
                 accession = seg_acc_pair[1]
                 result_arr.append({"accession":accession, "segment_name":segment_name, "accession_index":accession_index, "isolate_id":isolate_id})
-                if True or args.tmi: print("result_arr["+str(accession_index)+"]:"+str(result_arr[accession_index-1]))
+                if args.tmi: print("result_arr["+str(accession_index)+"]:"+str(result_arr[accession_index-1]))
 
             # QC accessions
             number_count = 0
@@ -234,7 +234,10 @@ def test_accession_IDs(df):
 # 4. Accession Numbers in the same block are seperated by a ; or a , or a :
 ##############################################################################################################
     # defining new DataFrame before hand
-    processed_accessions = pandas.DataFrame(columns=['Isolate_ID','Species','Exemplar_Additional','Accession_Index','Accession','Segment_Name',"Genus","Sort","Isolate_Sort","Original_GENBANK_Accessions","Errors"])
+    processed_accessions = pd.DataFrame(columns=['Isolate_ID','Species','Exemplar_Additional','Accession_Index','Accession','Segment_Name',"Genus","Start_Loc","End_Loc","Sort","Isolate_Sort","Original_GENBANK_Accessions","Errors"])
+    # pattern for accessions qualified by "(START,STOP)" subsequence qualifiers
+    accession_start_end_regex = r'(\w+)\s*\((\d+)(\.)(\w+)(\))'
+
     # for loop for every entry in given processed_accessionIDs
     for entry_count in range(0,len(df.index)):
         #
@@ -257,20 +260,37 @@ def test_accession_IDs(df):
 
         # iterate over accessions
         for acc_dict in gb_accessions_dict:
+            # default subsequence locations (none)
+            start_loc=""
+            end_loc=""
+            # check for accessions followed by (INT,INT) 
+            re_result=re.match(accession_start_end_regex, acc_dict["accession"])
 
+            if re_result:
+                # accession is qualified - parse out accession from START/STOP nt coords
+                processed_accession= re_result.group(1)
+                start_loc= re_result.group(2)
+                end_loc  = re_result.group(4)
+            else:
+                # use accession as is
+                processed_accession = acc_dict["accession"]
+                
             processed_accessions.loc[len(processed_accessions.index)] = [
                 df['Isolate ID'][entry_count],
                 df['Species'][entry_count],
                 df['Exemplar or additional isolate'][entry_count],
                 acc_dict["accession_index"],
-                acc_dict["accession"],
+                processed_accession,
                 acc_dict["segment_name"],
                 df['Genus'][entry_count],
+                start_loc,
+                end_loc,
                 df['Species Sort'][entry_count],
                 df['Isolate Sort'][entry_count],
                 df['Virus GENBANK accession'][entry_count],
                 #            df['Virus REFSEQ accession'][entry_count],
-                "" # errors            
+                "" # errors
+                
             ]
             #print("'"+processed_accession+"'"+' has been cleaned.')
 
@@ -299,10 +319,10 @@ def fetch_fasta(processed_accession_file_name):
 
     #Check to see if fasta data exists and, if it does, loads the accessions numbers from it into an np array.
     if args.verbose: print("  loading:", processed_accession_file_name)
-    Accessions = pandas.read_csv(processed_accession_file_name,sep='\t')
+    Accessions = pd.read_csv(processed_accession_file_name,sep='\t')
 
     all_reads = []
-    bad_accessions = pandas.DataFrame(columns=Accessions.columns)
+    bad_accessions = pd.DataFrame(columns=Accessions.columns)
 
     # NCBI Entrez Session setup
     entrez_sleep = 0.34 # 3 requests per second with email authN
@@ -370,8 +390,8 @@ def fetch_fasta(processed_accession_file_name):
                     if args.verbose: print('    wrote: '+accession_raw_file_name)
 
                 except:
-                    print("    [ERR] Accession ID"+"'"+str(accession_ID)+"'"+"did not get properly cleaned. Accession Cleaning Heuristic needs editing.",file=sys.stderr)
-                    bad_accessions.append(row)
+                    print("    [ERR] Accession ID "+"'"+str(accession_ID)+"'"+" Entrez.efetch threw an error",file=sys.stderr)
+                    bad_accessions = pd.concat([bad_accessions, pd.DataFrame([row])], ignore_index=True)
 
             # check if processed fasta is out of date
             if os.path.getsize(accession_raw_file_name) == 0:
@@ -411,7 +431,7 @@ def fetch_fasta(processed_accession_file_name):
 
     # wrap up and report errors
     print("Bad_Accession count:", len(bad_accessions.index))
-    pandas.DataFrame.to_csv(bad_accessions,bad_accessions_fname,sep='\t')
+    pd.DataFrame.to_csv(bad_accessions,bad_accessions_fname,sep='\t')
     print("Wrote to ", bad_accessions_fname)
     
 #######################################################################################################################################
@@ -457,7 +477,7 @@ def query_database(path_to_query):
             Accession_Number = current_line.split(" ")[0]
             Accession_Number = Accession_Number.split(".")[0]
             if args.verbose: print("  reading: "+processed_accesion_file_name)
-            Isolates = pandas.read_csv(processed_accession_file_name,sep='\t')
+            Isolates = pd.read_csv(processed_accession_file_name,sep='\t')
            
             hits = hits+[Isolates.loc[Isolates["Accession_IDs"] == Accession_Number]]
         elif ">" in current_line:
@@ -477,7 +497,7 @@ def main():
         
         if args.verbose: print("Writing", processed_accession_file_name)
         if args.verbose: print("\tColumn: ", tested_accessions_ids.columns)
-        pandas.DataFrame.to_csv(tested_accessions_ids,processed_accession_file_name,sep='\t',index=False)
+        pd.DataFrame.to_csv(tested_accessions_ids,processed_accession_file_name,sep='\t',index=False)
 
     if args.mode == "fasta" or None:
         print("# {0} pull FASTAs from NCBI".format(formatElapsedTime()))
