@@ -9,10 +9,20 @@
 # ARGS: 
 #     -      
 # ITERMEDIATE FILES:
+print("# Importing time python package")
+import time
+startTime = time.time()
+def formatElapsedTime():
+    """Returns elapsed time as a formatted string [HH]h[MM]m[SS]s"""
 
+    elapsedTime = time.time() - startTime
+    hours, remainder = divmod(int(elapsedTime), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"[{hours:02d}h{minutes:02d}m{seconds:02d}s]"
+
+print("# {0} Importing python packages: please wait...".format(formatElapsedTime()))
 import pandas
 import subprocess
-import time
 from urllib import error
 import argparse
 import numpy as np
@@ -30,6 +40,8 @@ class LoadFromFile (argparse.Action):
 parser = argparse.ArgumentParser(description="")
 
 #setting arguments.
+print("# {0} Parsing args...".format(formatElapsedTime()))
+
 parser.add_argument('-verbose',help="printout details during run",action=argparse.BooleanOptionalAction)
 parser.add_argument('-tmi',help="printout Too Much Information during run",action=argparse.BooleanOptionalAction)
 parser.add_argument('-file',help="optional argument. Name of the file to get arguments from.",type=open, action=LoadFromFile)
@@ -79,6 +91,7 @@ def load_VMR_data():
 
         if sheet_name is None:
             raise ValueError("No worksheet name matching the pattern '^VMR MSL' found.")
+            raise SystemExit(1)
         else:
             raw_vmr_data = pandas.read_excel(args.VMR_file_name,sheet_name=sheet_name,engine='openpyxl')
             if args.verbose: print("VMR data loaded: {0} rows, {1} columns.".format(*raw_vmr_data.shape))
@@ -93,12 +106,18 @@ def load_VMR_data():
                 else:
                     print("    "+col_name)
                     
+            have_missing=False 
             for col_name in vmr_cols_needed:
                 if not col_name in list(raw_vmr_data.columns):
                     print("    "+col_name+" [!MISSING!]")
+                    have_missing=True
+            if have_missing:
+                print("Error: Required columns are missing from {0}".format(args.VMR_file_name), file=sys.stderr)
+                raise SystemExit(1)
 
     except(FileNotFoundError):
         print("The VMR file specified does not exist! Make sure the path set by '-VMR_file_name' is correct.",file=sys.stderr)
+        raise SystemExit(1)
     
 
     # save As TSV for diff'ing
@@ -134,7 +153,74 @@ def load_VMR_data():
     if args.verbose: print("   Truncated: {0} rows, {1} columns.".format(*narrow_vmr_data.shape))
     
     return narrow_vmr_data
+#insert(parse_seg_accession_list)
+def parse_seg_accession_list(isolate_id,acc_list_str):
+    # remove whitespace.
+    acc_list_str = acc_list_str.replace(" ","")
 
+    # instead of trying to split by commas and semicolons, I just replace the commas with semicolons. 
+    acc_list_str = acc_list_str.replace(",",";")
+
+    # split into list: ";" 
+    accession_list = acc_list_str.split(';')
+    if True or args.tmi: print("accession_list:"+"|".join(accession_list))
+
+    # 
+    # for each [SEG:]ACCESSION
+    # 
+    sa_dict = {} # seg_name-accession map
+    accession_index = 0
+    for seg_acc_str in accession_list:
+        if True or args.tmi: print("seg_acc_str:"+seg_acc_str)
+
+        # track accession/segment order, so it can be preserved
+        accession_index += 1
+
+        # split optional "segment_name:" prefix on accessions
+        seg_acc_pair = seg_acc_str.split(':')
+        segment_name = None
+        accession    = None
+        if len(seg_acc_pair)==0 or len(seg_acc_pair)>2:
+            print("ERROR[isolate_id:"+str(isolate_id)+": [seg:]acc >1 colon: '"+str(seg_acc_pair)+"' from '"+acc_list_str+"'",file=sys.stderr)
+        else:
+            if len(seg_acc_pair)==1:
+                # bare accession
+                accession = seg_acc_pair[0]
+                sa_dict[accession_index] = {"accession":accession, "segment_name":None, "accession_index":accession_index, "isolate_id":isolate_id}
+                if True or args.tmi: print("sa_dict["+str(accession_index)+"]:"+str(sa_dict[accession_index]))
+            elif len(seg_acc_pair)==2:
+                # seg_name:accession
+                segment_name = seg_acc_pair[0]
+                accession = seg_acc_pair[1]
+                sa_dict[segment_name] = {"accession":accession, "segment_name":segment_name, "accession_index":accession_index, "isolate_id":isolate_id}
+                if True or args.tmi: print("sa_dict["+str(segment_name)+"]:"+str(sa_dict[segment_name]))
+
+            # QC accessions
+            number_count = 0
+            letter_count = 0
+            # counting letters
+            for char in accession:
+                if char in 'qwertyuiopasdfghjklzxcvbnm':
+                    letter_count = letter_count+1
+            # counting numbers
+                elif char in '1234567890':
+                    number_count = number_count+1
+            #checks if current selection fits what an accession number should be
+            if not (len(str(accession)) == 8 or 6 and letter_count<3 and number_count>3):
+                print("ERROR[isolate_id:"+str(isolate_id)+"]: suspect accesssion '"+accession+"'",file=sys.stderr)
+
+                
+    # we'll check later if this segment has a name 
+    return(sa_dict)
+#
+# test cases
+#
+#print(parse_seg_accession_list(1003732,'HM246720'))
+#print(parse_seg_accession_list(1003732,'NC_027989'))
+#print(parse_seg_accession_list(1003732,'HM246720; HM246721; HM246722; HM246723; HM246724'))
+#print(parse_seg_accession_list(1003732,'NC_027989; NC_041833; NC_041831; NC_041832; NC_041834'))
+#print(parse_seg_accession_list(1007556,'DNA-C: EF546812; DNA-M: EF546811; DNA-N: EF546808; DNA-R: EF546813; DNA-S:EF546810; DNA-U3: EF546809'))
+#print(parse_seg_accession_list(1007556,'DNA-C: NC_010318; DNA-M: NC_010317; DNA-N:NC_010314; DNA-R: NC_010319; DNA-S: NC_010316; DNA-U3:     NC_010315'))
 
 def test_accession_IDs(df):
     if args.verbose: print("test_accession_IDs()")
@@ -156,71 +242,33 @@ def test_accession_IDs(df):
         
  
         # get original list of accessions
-        accessions_str = str(df['Virus GENBANK accession'][entry_count])
-        # remove whitespace.
-        accessions_str = accessions_str.replace(" ","")
-        if args.tmi: print("accessions_str.replace(' '):"+accessions_str)
+        gb_accessions_str = str(df['Virus GENBANK accession'][entry_count])
+        rs_accessions_str = str(df['Virus REFSEQ accession'][entry_count])
 
-        # instead of trying to split by commas and semicolons, I just replace the commas with semicolons. 
-        accessions_str = accessions_str.replace(",",";")
-        if args.tmi: print("accessions_str.replace(','):"+accessions_str)
-        accession_list = accessions_str.split(';')
-        if args.tmi: print("accessions_list:"+"|".join(accession_list))
-        
-        #
-        # split optional "segment_name:" prefix on accessions
-        #
-        accession_list = [accession_part.split(':') for accession_part in accession_list]
-    
-        # 
-        # for each [SEG:]ACCESSION
-        # 
-        accession_index = 0
-        for seg_accession in accession_list:
-            # track accession/segment order, so it can be preserved
-            accession_index += 1
-            # we'll check later if this segment has a name 
-            segment_name = None
-            errors= ""
+        # parse
+        gb_accessions_dict = parse_seg_accession_list(gb_accessions_str)
+        rs_accessions_dict = parse_seg_accession_list(rs_accessions_str)
 
-            #flag long strings as being suspect. Most aren't 10 characters long. 
-            if len(seg_accession) > 10:
-                errors = 'suspiciously long accession number or segment name. Please verify its correct:'+str(seg_accession)
-                print(errors,file=sys.stderr)
+        # merge parallel lists (not nice)
+        if len(gb_accessions_dict) != rs_accessions_dict:
+            print("WARNING[isolate:"+str(isolate_id)+"]: gb_n_acc: "+str(len(gb_accessions_dict))+" != rs_n_acc:"+str(len(rs_accessions_dict)),file=sys.stderr)
 
-            # 
-            # parse optional [SEG_NAME:] prefix 
-            for accession_part in seg_accession:
-                # 
-                # detect ACCESSION
-                #
-                number_count = 0
-                letter_count = 0
-                # counting letters
-                for char in accession_part:
-                    if char in 'qwertyuiopasdfghjklzxcvbnm':
-                        letter_count = letter_count+1
-                # counting numbers
-                    elif char in '1234567890':
-                        number_count = number_count+1
-                #checks if current selection fits what an accession number should be
-                if len(str(accession_part)) == 8 or 6 and letter_count<3 and number_count>3:
-                    processed_accession = accession_part
-                    processed_accessions.loc[len(processed_accessions.index)] = [
-                                                                                       df['Isolate ID'][entry_count],
-                                                                                       df['Species'][entry_count],
-                                                                                       df['Exemplar or additional isolate'][entry_count],
-                                                                                       accession_index,
-                                                                                       processed_accession,
-                                                                                       segment_name,
-                                                                                       df['Genus'][entry_count],
-                                                                                       df['Species Sort'][entry_count],
-                                                                                       df['Isolate Sort'][entry_count],
-                                                                                       df['Virus GENBANK accession'][entry_count],
-                                                                                       df['Virus REFSEQ accession'][entry_count],
-                                                                                       errors ]
+ 
+            processed_accessions.loc[len(processed_accessions.index)] = [
+                        df['Isolate ID'][entry_count],
+                        df['Species'][entry_count],
+                        df['Exemplar or additional isolate'][entry_count],
+                        accession_index,
+                        processed_accession,
+                        segment_name,
+                        df['Genus'][entry_count],
+                        df['Species Sort'][entry_count],
+                        df['Isolate Sort'][entry_count],
+                        df['Virus GENBANK accession'][entry_count],
+                        df['Virus REFSEQ accession'][entry_count],
+                        errors ]
                     #print("'"+processed_accession+"'"+' has been cleaned.')
-                else:
+        else:
                     # 
                     # otherwise, must be a segment_name
                     # 
@@ -421,10 +469,10 @@ def main():
     if args.verbose: print("main()")
 
     if args.mode == "VMR" or None:
-        print("# load VMR")
+        print("# {0} load VMR".format(formatElapsedTime()))
         vmr_data = load_VMR_data()
 
-        if args.verbose: print("# testing accession IDs")
+        if args.verbose: print("# {0} testing accession IDs".format(formatElapsedTime()))
         tested_accessions_ids = test_accession_IDs(vmr_data)
         
         if args.verbose: print("Writing", processed_accession_file_name)
@@ -432,17 +480,17 @@ def main():
         pandas.DataFrame.to_csv(tested_accessions_ids,processed_accession_file_name,sep='\t')
 
     if args.mode == "fasta" or None:
-        print("# pull FASTAs from NCBI")
+        print("# {0} pull FASTAs from NCBI".format(formatElapsedTime()))
         if args.verbose: print("Using ", processed_accession_file_name)
         fetch_fasta(processed_accession_file_name)
 
     if args.mode == "db" or None:
-        print("# Query local VMR-E BLASTdb")
+        print("# {0} Query local VMR-E BLASTdb".format(formatElapsedTime()))
         query_database(args.query)
 
 main()
 
-if args.verbose: print("Done.")
+if args.verbose: print("# {0} Done.".format(formatElapsedTime()))
 
 
 
