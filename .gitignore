@@ -31,6 +31,7 @@ log.*
 conda/
 # downloaded fasta
 *.fa
+fasta_new_vmr_b/
 fasta_new_vmr_a/
 fasta_new_vmr/
 # intermediate files
