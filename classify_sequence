@@ -46,7 +46,8 @@ out_dict = {
             "status"                 : "CLASSIFIED",
             "classification_rank"    : "species",
             "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"WorldGenus", "species":"WorldGenus specius"},
-            "blast_htmls"             : { "blast_results": args.html+'_1.html' }
+            "blast_html"             : "'+args.html+'_1.html",
+            "blast_csv"              : "'+args.html+'_1.csv",
         }
         ,
         {
@@ -56,11 +57,15 @@ out_dict = {
             "classification_rank"    : "genus",
             "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"CountryGenus"},
             "message"                : "Homologous to species within the genus, but not close enough to classify within an existing species",
-            "blast_htmls"             : { "blast_results": args.html+'_2.html' }
+            "blast_html"             : "'+args.html+'_2.html",
+            "blast_csv"              : "'+args.html+'_2.csv",
         }
     ]
 }
 
+#
+# bogus "hello world" data
+#
 html_hello_world_pre = """<HTML>
 <HEADER><TITLE>hello world HTML"""
 
@@ -78,6 +83,33 @@ def concatenate_html(str_val):
     return html_hello_world_pre + str_val + html_hello_world_mid + str_val + html_hello_world_post
 
 
+csv_results_txt = """# BLASTN 2.16.0+
+# Query: AY954969.1#Kayvirus_G1 AY954969.1 Staphylococcus phage G1, complete genome
+# Database: ./blast/ICTV_VMR_b
+# Fields: query acc.ver, subject acc.ver, % identity, alignment length, mismatches, gap opens, q. start, q. end, s. start, s. end, evalue, bit score
+# 7 hits found
+AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,100.000,138715,0,0,1,138715,1,138715,0.0,2.562e+05
+AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,95.783,498,12,9,135784,136276,135594,136087,0.0,795
+AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,95.783,498,12,9,135594,136087,135784,136276,0.0,795
+AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,92.208,308,15,9,135974,136276,135594,135897,4.96e-118,427
+AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,92.208,308,15,9,135594,135897,135974,136276,4.96e-118,427
+AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,82.203,118,12,9,136164,136276,135594,135707,2.06e-17,93.5
+AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,82.203,118,12,9,135594,135707,136164,136276,2.06e-17,93.5
+# BLAST processed 1 queries
+"""
+
+#
+# read in better bogus hello world data from filesys
+#
+hello_world_data_csv_filename="hello_world_data/AY954969.csv"
+hello_world_data_html_filename="hello_world_data/AY954969.html"
+
+with open(hello_world_data_csv_filename, 'r') as f:
+    hello_world_data_csv = f.read()
+
+with open(hello_world_data_html_filename, 'r') as f:
+    hello_world_data_html = f.read()
+
 #
 # write output/results
 #
@@ -88,15 +120,33 @@ os.makedirs(args.outdir, exist_ok=True)
 # seq 1 blast html output
 html_1_outpath=os.path.join(args.outdir, args.html+'_1.html')
 with open(html_1_outpath, "w") as outfile:
-    outfile.write(concatenate_html("1"))
+    #outfile.write(concatenate_html("1"))
+    outfile.write(hello_world_data_html)
 print("Wrote: ", html_1_outpath)
 outfile.close()
 
 # seq 2 blast html output
 html_2_outpath=os.path.join(args.outdir, args.html+'_2.html')
 with open(html_2_outpath, "w") as outfile:
-    outfile.write(concatenate_html("2"))
+    #outfile.write(concatenate_html("2"))
+    outfile.write(hello_world_data_html)
 print("Wrote: ", html_2_outpath)
+outfile.close()
+
+# seq 1 blast CSV output
+csv_1_outpath=os.path.join(args.outdir, args.html+'_1.csv')
+with open(csv_1_outpath, "w") as outfile:
+    #outfile.write(csv_results_txt)
+    outfile.write(hello_world_data_csv)
+print("Wrote: ", csv_1_outpath)
+outfile.close()
+
+# seq 2 blast CSV output
+csv_2_outpath=os.path.join(args.outdir, args.html+'_2.csv')
+with open(csv_2_outpath, "w") as outfile:
+    outfile.write(csv_results_txt)
+    outfile.write(hello_world_data_csv)
+print("Wrote: ", csv_2_outpath)
 outfile.close()
 
 # json job output/summary
