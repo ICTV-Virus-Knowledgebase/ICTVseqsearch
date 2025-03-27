@@ -65,6 +65,11 @@ COPY processed_accessions_b.tsv ./
 #COPY fixed_vmr_a.tsv ./
 #COPY fixed_vmr_e.tsv ./
 
+#
+# copy in hard-coded result data (prototype only)
+# 
+COPY hello_world_data/ ./hello_world_data/
+
 # what does ENTRYPOINT do exactly?
 # ENTRYPOINT fixed the base command; immutable
 ENTRYPOINT [ "./classify_sequence" ]
