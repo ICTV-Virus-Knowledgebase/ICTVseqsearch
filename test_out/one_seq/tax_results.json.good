@@ -1,6 +1,6 @@
 {
     "program_name": "classify_sequence",
-    "version": "v0.1.2d07b03",
+    "version": "v0.3.b4cd48a",
     "input_dir": "seq_in",
     "results": [
         {
@@ -13,7 +13,9 @@
                 "family": "BigFamily",
                 "genus": "WorldGenus",
                 "species": "WorldGenus specius"
-            }
+            },
+            "blast_html": "tax_results_1.html",
+            "blast_csv": "tax_results_1.csv"
         },
         {
             "input_file": "test12.fa",
@@ -25,13 +27,9 @@
                 "family": "BigFamily",
                 "genus": "CountryGenus"
             },
-            "message": "Homologous to species within the genus, but not close enought to classify within an existintg species"
-        },
-        {
-            "input_file": "test3.fasta",
-            "input_seq": "test_seq_3",
-            "status": "FAILED",
-            "error": "Sequence did not have 0.5% or more of it's sequence homologus to a reference species"
+            "message": "Homologous to species within the genus, but not close enough to classify within an existing species",
+            "blast_html": "tax_results_2.html",
+            "blast_csv": "tax_results_2.csv"
         }
     ]
 }

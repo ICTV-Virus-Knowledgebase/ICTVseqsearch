@@ -32,6 +32,6 @@ VER=$(cat $VER_FILE)
 # Build image from Dockerfile
 #
 
-sudo docker build -t ictv_sequence_classifier .
+sudo docker build -t ictv_seqsearch .
 
 
