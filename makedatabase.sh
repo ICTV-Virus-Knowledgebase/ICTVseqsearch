@@ -26,7 +26,7 @@ ALL_FASTA=./fasta_new_vmr_$EA/vmr_$EA.fa
 SRC_DIR=$(dirname $ALL_FASTA)
 BLASTDB=./blast/ICTV_VMR_$EA
 FIRST_FASTA=$(awk 'BEGIN{FS="\t";GENUS=7;ACC=5}(NR>1){print $GENUS"/"$ACC".fa"}' $ACCESSION_TSV|head -1)
-FILE_PATH_EXAMPLE=$(awk 'BEGIN{FS="\t";GENUS=7;ACC=5}(NR>1){print $GENUS"/"$ACC".csv"}' $ACCESSION_TSV|head -1)
+OUT_FILEPATH=$(awk 'BEGIN{FS="\t";GENUS=7;ACC=5}(NR>1){print $GENUS"/"$ACC}' $ACCESSION_TSV|head -1)
 
 echo "# concatenate individual fasta's into all.fa"
 # if any fastas are updated, rebuild master fasta
@@ -53,5 +53,10 @@ echo 'makeblastdb -in $ALL_FASTA -input_type "fasta" -title "ICTV VMR refseqs" -
 makeblastdb -in $ALL_FASTA -input_type "fasta" -title "ICTV VMR refseqs" -out "$BLASTDB" -dbtype "nucl"
 
 echo "# Example usage:"
-echo "# mkdir -p ./results/$EA/$(dirname $FILE_PATH_EXAMPLE)"
-echo "# blastn -db $BLASTDB -query ./$SRC_DIR/$FIRST_FASTA -out ./results/$EA/$FILE_PATH_EXAMPLE  -outfmt '7 delim=,'"
+echo "# mkdir -p ./results/$EA/$(dirname $OUT_FILEPATH)"
+echo "# CSV output"
+echo "# blastn -db $BLASTDB -query ./$SRC_DIR/$FIRST_FASTA -out ./results/$EA/${OUT_FILEPATH}.csv -outfmt '7 delim=,'"
+echo "# HTML output"
+echo "# blastn -db $BLASTDB -query ./$SRC_DIR/$FIRST_FASTA -out ./results/$EA/${OUT_FILEPATH}.asn -outfmt '11'"
+echo "# blast_formatter -archive ./results/$EA/${OUT_FILEPATH}.asn -out ./results/$EA/${OUT_FILEPATH}.html -html"
+
