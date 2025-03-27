@@ -20,30 +20,30 @@ VER_STR=$(cat $VER_FILE)
 #
 # tag
 # 
-echo sudo docker tag ictv_sequence_classifier curtish/ictv_sequence_classifier:$VER_STR
-     sudo docker tag ictv_sequence_classifier curtish/ictv_sequence_classifier:$VER_STR
+echo sudo docker tag ictv_seqsearch curtish/ictv_seqsearch:$VER_STR
+     sudo docker tag ictv_seqsearch curtish/ictv_seqsearch:$VER_STR
  
-echo sudo docker tag ictv_sequence_classifier curtish/ictv_sequence_classifier:latest
-     sudo docker tag ictv_sequence_classifier curtish/ictv_sequence_classifier:latest
+echo sudo docker tag ictv_seqsearch curtish/ictv_seqsearch:latest
+     sudo docker tag ictv_seqsearch curtish/ictv_seqsearch:latest
 
 #
 # tag
 #
 if [ "$PUSH" == "yes" ]; then echo -n "# "; fi
-echo sudo docker push curtish/ictv_sequence_classifier:$VER_STR
+echo sudo docker push curtish/ictv_seqsearch:$VER_STR
 if [ "$PUSH" == "yes" ]; then
-    sudo docker push curtish/ictv_sequence_classifier:$VER_STR
+    sudo docker push curtish/ictv_seqsearch:$VER_STR
 fi
 
 if [ "$PUSH" == "yes" ]; then echo -n "# "; fi
-echo sudo docker push curtish/ictv_sequence_classifier:latest
+echo sudo docker push curtish/ictv_seqsearch:latest
 if [ "$PUSH" == "yes" ]; then
-     sudo docker push curtish/ictv_sequence_classifier:latest
+     sudo docker push curtish/ictv_seqsearch:latest
 fi
 
 #
 # to pull instructions
 #
 echo "# to pull, run:"
-echo "docker pull curtish/ictv_sequence_classifier:$VER_STR"
-echo "docker pull curtish/ictv_sequence_classifier:latest"
+echo "docker pull curtish/ictv_seqsearch:$VER_STR"
+echo "docker pull curtish/ictv_seqsearch:latest"

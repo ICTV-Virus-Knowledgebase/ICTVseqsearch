@@ -15,7 +15,7 @@ mkdir -p $OUT_DIR
 sudo docker run -it \
 	-v "${TEST_DIR}:/seq_in" \
 	-v "${OUT_DIR}:/tax_out" \
-	ictv_sequence_classifier \
+	ictv_seqsearch \
 	$*
 
 

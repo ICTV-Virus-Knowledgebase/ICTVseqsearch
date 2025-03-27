@@ -47,7 +47,7 @@ RUN set -e \
 # copy in our application
 #
 # do this as a git clone, instead!?!?
-COPY classify_sequence .
+COPY seqsearch .
 COPY version_git.txt .
 
 #
