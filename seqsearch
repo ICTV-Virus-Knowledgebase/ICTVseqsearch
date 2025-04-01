@@ -32,6 +32,18 @@ print("OUT_HTML:", args.html)
 with open("version_git.txt") as verfile:
     git_version = verfile.readline().strip()
 print("VERSION:", git_version )
+
+
+# for eden: get list of fasta files in input directory (.fa/.fna.fasta) 
+
+
+
+
+
+
+
+
+
 #
 # hello world data dictionry
 #
