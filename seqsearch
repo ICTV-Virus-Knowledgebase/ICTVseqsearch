@@ -35,8 +35,44 @@ print("VERSION:", git_version )
 
 
 # for eden: get list of fasta files in input directory (.fa/.fna.fasta) 
+if args.verbose:
+    print("Files in input directory: ", os.listdir(args.indir))
+# get list of fasta files
+fasta_files = []
+for  infilename in os.listdir(args.indir):
+    if infilename.endswith(".fa") or infilename.endswith(".fna") or infilename.endswith(".fasta"):
+            fasta_files.append (infilename)
+print("FASTA files found: ", fasta_files)
+
+# iterate over fasta files
+for infilename in fasta_files:
+    # read in fasta file
+    fasta_file_path = os.path.join(args.indir, infilename)
+    # run wc system command to get number of lines in fasta file
+    system_output= os.popen("wc -l " + fasta_file_path).read()
+    print( system_output)
 
 
+
+
+
+
+
+
+
+
+
+
+#    """  print("Reading fasta file: ", fasta_file_path)
+#     with open(fasta_file_path, 'r') as f:
+#         fasta_data = f.read()
+#         # parse fasta data
+#         seqs = fasta_data.split('>')[1:]  # split on '>' and ignore the first element
+#         for seq in seqs:
+#             header, sequence = seq.split('\n', 1)
+#             sequence = sequence.replace('\n', '')
+#             print("Header: ", header)
+#             print("Sequence: ", sequence) """
 
 
 
