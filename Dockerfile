@@ -72,6 +72,6 @@ COPY hello_world_data/ ./hello_world_data/
 
 # what does ENTRYPOINT do exactly?
 # ENTRYPOINT fixed the base command; immutable
-ENTRYPOINT [ "./classify_sequence" ]
+ENTRYPOINT [ "./seqsearch" ]
 # CMD add default cmds/arguments
-#CMD [ "./classify_sequence" ]
+#CMD [ "./seqsearch" ]
