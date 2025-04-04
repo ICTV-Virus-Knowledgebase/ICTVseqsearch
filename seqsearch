@@ -52,10 +52,21 @@ for infilename in fasta_files:
     system_output= os.popen("wc -l " + fasta_file_path).read()
 
     # put fasta output fasta into separate files
-    system_output_file= os.path.join(args.outdir, infilename)
+    system_output_file= os.path.join(args.outdir, infilename + ".asn")
     with open(system_output_file, "w") as outfile:
         outfile.write(system_output)    
     print("Wrote: ", system_output_file)
+
+    #create path for output path for blast
+    blast_outfile = os.path.join(args.outdir, infilename + ".blast")
+
+    # run blastn system command
+    blastn -db $BLASTDB -query $fasta_file_path -out $blast_outfile -outfmt '11'
+
+
+
+    #files are to be html, csv, asn
+    #blast runs first to creat asn then coverts to html and csv
 
 
     
