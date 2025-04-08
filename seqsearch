@@ -49,22 +49,30 @@ print("FASTA files found: ", fasta_files)
 for infilename in fasta_files:
     # read in fasta file
     fasta_file_path = os.path.join(args.indir, infilename)
-    blast_output_filepath= os.path.join(args.outdir, infilename + ".asn")
+    blastasn_output_filepath= os.path.join(args.outdir, infilename + ".asn")
+
+    #blast output format commands.
+
+    blastasn_cmd = ["blastn", "-db", args.blastdb , "-query", fasta_file_path , "-out", blastasn_output_filepath, "-outfmt", "11"]
+    blastcsv_cmd = ["blastn", "-db", args.blastdb , "-query", fasta_file_path , "-out", blastasn_output_filepath, "-outfmt", "10"]
+    blasthtml_cmd = ["blastn", "-db", args.blastdb , "-query", fasta_file_path , "-out", blastasn_output_filepath, "-outfmt", "5"]
+    print("ASN Format Command:", " ".join(blastasn_cmd), "\n", "CSV Format Command:", " ".join(blastcsv_cmd), "\n", "HTML Format Command:", " ".join(blasthtml_cmd))
+    db_output_asn = subprocess.run(blastasn_cmd, capture_output=True, text=True)
+    db_output_csv = subprocess.run(blastcsv_cmd, capture_output=True, text=True)
+    db_output_html = subprocess.run(blasthtml_cmd, capture_output=True, text=True)
     
-    blast_cmd = ["blastn", "-db", args.blastdb , "-query", fasta_file_path , "-out", blast_output_filepath, "-outfmt", "11"]
-    print(" ".join(blast_cmd))
-    db_output = subprocess.run(blast_cmd, capture_output=True, text=True)
-    print("DB output: ", db_output)  
+
+print("Blast output files:", blastasn_output_filepath)
+
+    
+
+    
+
+
 
     
     
-    # with open(system_output_file, "w") as outfile:
-    #     outfile.write(system_output)    
-    # print("Wrote: ", system_output_file)
-
-    # #create path for output path for blast
-    # blast_outfile = os.path.join(args.outdir, infilename + ".blast")
-    # subprocess.run(["makedatabase.sh", "-input " + fasta_file_path + " -out " + blast_outfile + ".asn"])
+   
     
      
 
