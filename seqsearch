@@ -8,7 +8,7 @@ import pandas as pd
 import json
 import os
 import sys
-
+import subprocess
 #
 # parse ARGS
 #
@@ -18,6 +18,7 @@ parser.add_argument('-indir',help="directory for fasta files with NUCLEOTIDE seq
 parser.add_argument('-outdir',help="output directory for tax_results.json",default="tax_out")
 parser.add_argument('-json',help="output json filename",default="tax_results.json")
 parser.add_argument('-html',help="output  html base filename",default="tax_results")
+parser.add_argument('-blastdb',help="input blast base filename",default="./blast/ICTV_VMR_b")
 args = parser.parse_args()
 
 print("Hello World")
@@ -48,20 +49,29 @@ print("FASTA files found: ", fasta_files)
 for infilename in fasta_files:
     # read in fasta file
     fasta_file_path = os.path.join(args.indir, infilename)
-    # run wc system command to get number of lines in fasta file
-    system_output= os.popen("wc -l " + fasta_file_path).read()
+    blast_output_filepath= os.path.join(args.outdir, infilename + ".asn")
+    
+    blast_cmd = ["blastn", "-db", args.blastdb , "-query", fasta_file_path , "-out", blast_output_filepath, "-outfmt", "11"]
+    print(" ".join(blast_cmd))
+    db_output = subprocess.run(blast_cmd, capture_output=True, text=True)
+    print("DB output: ", db_output)  
 
-    # put fasta output fasta into separate files
-    system_output_file= os.path.join(args.outdir, infilename + ".asn")
-    with open(system_output_file, "w") as outfile:
-        outfile.write(system_output)    
-    print("Wrote: ", system_output_file)
+    
+    
+    # with open(system_output_file, "w") as outfile:
+    #     outfile.write(system_output)    
+    # print("Wrote: ", system_output_file)
 
-    #create path for output path for blast
-    blast_outfile = os.path.join(args.outdir, infilename + ".blast")
+    # #create path for output path for blast
+    # blast_outfile = os.path.join(args.outdir, infilename + ".blast")
+    # subprocess.run(["makedatabase.sh", "-input " + fasta_file_path + " -out " + blast_outfile + ".asn"])
+    
+     
 
-    # run blastn system command
-    blastn -db $BLASTDB -query $fasta_file_path -out $blast_outfile -outfmt '11'
+    
+
+
+   
 
 
 
