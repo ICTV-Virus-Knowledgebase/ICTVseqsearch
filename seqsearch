@@ -50,16 +50,25 @@ for infilename in fasta_files:
     # read in fasta file
     fasta_file_path = os.path.join(args.indir, infilename)
     blastasn_output_filepath= os.path.join(args.outdir, infilename + ".asn")
+    blastcsv_output_filepath= os.path.join(args.outdir, infilename + ".csv")
+    blasthtml_output_filepath= os.path.join(args.outdir, infilename + ".html")
 
     #blast output format commands.
 
     blastasn_cmd = ["blastn", "-db", args.blastdb , "-query", fasta_file_path , "-out", blastasn_output_filepath, "-outfmt", "11"]
-    blastcsv_cmd = ["blastn", "-db", args.blastdb , "-query", fasta_file_path , "-out", blastasn_output_filepath, "-outfmt", "10"]
-    blasthtml_cmd = ["blastn", "-db", args.blastdb , "-query", fasta_file_path , "-out", blastasn_output_filepath, "-outfmt", "5"]
+    blastcsv_cmd = ["blastn", "-db", args.blastdb , "-query", fasta_file_path , "-out", blastcsv_output_filepath, "-outfmt", "10"]
+    blasthtml_cmd = ["blastn", "-db", args.blastdb , "-query", fasta_file_path , "-out", blasthtml_output_filepath, "-outfmt", "5"]
     print("ASN Format Command:", " ".join(blastasn_cmd), "\n", "CSV Format Command:", " ".join(blastcsv_cmd), "\n", "HTML Format Command:", " ".join(blasthtml_cmd))
+
+
     db_output_asn = subprocess.run(blastasn_cmd, capture_output=True, text=True)
-    db_output_csv = subprocess.run(blastcsv_cmd, capture_output=True, text=True)
-    db_output_html = subprocess.run(blasthtml_cmd, capture_output=True, text=True)
+    if db_output_asn.returncode == 0:
+        blastasn_output_filepath == os.path.join(args.outdir, infilename + ".csv")
+    if blastasn_output_filepath == os.path.join(args.outdir, infilename + ".csv"):
+        blastasn_output_filepath = os.path.join(args.outdir, infilename + ".html")
+
+
+
     
 
 print("Blast output files:", blastasn_output_filepath)
