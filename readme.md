@@ -40,5 +40,43 @@ To create conda environments:
   
     ./VMR_to_fasta.py -mode fasta -ea [E|A|B] -email [your_email]
     
-  TODO: Fix db mode. 
+<h3>Build database</h3>
 
+  Once the fastas are all downloaded (*.raw) and have had their header lines updated (.fa), we need to merge all the fastas and build a blastdb from the resulting file. Note
+   * hardcoded to "-ea b":
+   * reads in:          ./processed_accessions_b.tsv
+   * writes FASTAs to:  ./fasta_new_vmr_b/
+   * writes BLASTdb to: ./blast/ICTV_VMR_b.*
+
+```
+  # local build of test database (on mac)
+  ./makedatabase.sh
+```
+or
+```
+  # submit cluster job (cheaha)
+  sbatch ./makedatabase.sh
+```
+
+<h3>Test Query</h3>
+
+Query for something in the test VMR.
+
+CSV output: 
+```
+# CSV output (fmt=7)
+blastn -db ./blast/ICTV_VMR_b -query ./fasta_new_vmr_b/Eponavirus/MG711462.fa -out ./results/e/Eponavirus/MG711462.csv  -outfmt '7 delim=,'"
+```
+
+HTML output: 
+```
+# basic HTML output
+blastn -query  ./fasta_new_vmr_b/Kayvirus/AY954969.fa \
+       -db     ./blast/ICTV_VMR_b
+       -out    ./results/AY954969.asn \
+       -outfmt 11
+
+blast_formatter -archive ./results/AY954969.asn \
+                -out     ./results/AY954969.html \
+                -html
+```
