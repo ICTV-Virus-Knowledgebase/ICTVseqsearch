@@ -35,6 +35,43 @@ with open("version_git.txt") as verfile:
 print("VERSION:", git_version )
 
 
+
+#
+# hello world data dictionry
+#
+out_dict = {
+    "program_name": os.path.basename(sys.argv[0]),
+    "version"  : git_version,
+    "input_dir": args.indir,
+    "results"  : [
+        {
+            "input_file"             : "test12.fa",
+            "input_seq"              : "test_seq_1",
+            "status"                 : "CLASSIFIED",
+            "classification_rank"    : "species",
+            "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"WorldGenus", "species":"WorldGenus specius"},
+            "blast_html"             : args.html+"_1.html",
+            "blast_csv"              : args.html+"_1.csv",
+        }
+        ,
+        {
+            "input_file"             : "test12.fa",
+            "input_seq"              : "test_seq_2",
+            "status"                 : "CLASSIFIED",
+            "classification_rank"    : "genus",
+            "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"CountryGenus"},
+            "message"                : "Homologous to species within the genus, but not close enough to classify within an existing species",
+            "blast_html"             : args.html+"_2.html",
+            "blast_csv"              : args.html+"_2.csv",
+        }
+    ]
+}
+
+#
+# bogus "hello world" data
+#
+
+
 # for eden: get list of fasta files in input directory (.fa/.fna.fasta) 
 if args.verbose:
     print("Files in input directory: ", os.listdir(args.indir))
@@ -134,40 +171,7 @@ for infilename in fasta_files:
 
 
 
-#
-# hello world data dictionry
-#
-out_dict = {
-    "program_name": os.path.basename(sys.argv[0]),
-    "version"  : git_version,
-    "input_dir": args.indir,
-    "results"  : [
-        {
-            "input_file"             : "test12.fa",
-            "input_seq"              : "test_seq_1",
-            "status"                 : "CLASSIFIED",
-            "classification_rank"    : "species",
-            "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"WorldGenus", "species":"WorldGenus specius"},
-            "blast_html"             : args.html+"_1.html",
-            "blast_csv"              : args.html+"_1.csv",
-        }
-        ,
-        {
-            "input_file"             : "test12.fa",
-            "input_seq"              : "test_seq_2",
-            "status"                 : "CLASSIFIED",
-            "classification_rank"    : "genus",
-            "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"CountryGenus"},
-            "message"                : "Homologous to species within the genus, but not close enough to classify within an existing species",
-            "blast_html"             : args.html+"_2.html",
-            "blast_csv"              : args.html+"_2.csv",
-        }
-    ]
-}
 
-#
-# bogus "hello world" data
-#
 html_hello_world_pre = """<HTML>
 <HEADER><TITLE>hello world HTML"""
 
