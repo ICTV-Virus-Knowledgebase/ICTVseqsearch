@@ -37,14 +37,13 @@ print("VERSION:", git_version )
 
 
 #
-# hello world data dictionry
+# hello world data dictionary
 #
 out_dict = {
     "program_name": os.path.basename(sys.argv[0]),
     "version"  : git_version,
     "input_dir": args.indir,
-    "results"  : [
-        {
+        "csv_dict":{
             "input_file"             : "test12.fa",
             "input_seq"              : "test_seq_1",
             "status"                 : "CLASSIFIED",
@@ -54,7 +53,7 @@ out_dict = {
             "blast_csv"              : args.html+"_1.csv",
         }
         ,
-        {
+        "html_dict": {
             "input_file"             : "test12.fa",
             "input_seq"              : "test_seq_2",
             "status"                 : "CLASSIFIED",
@@ -64,7 +63,6 @@ out_dict = {
             "blast_html"             : args.html+"_2.html",
             "blast_csv"              : args.html+"_2.csv",
         }
-    ]
 }
 
 #
@@ -104,6 +102,20 @@ for infilename in fasta_files:
     print("Blast .csv output files:", blastcsv_output_filepath)
     db_output_html = subprocess.run(blasthtml_cmd, capture_output=True, text=True)
     print("Blast .html output files:", blasthtml_output_filepath)
+
+    #reading html and csv files to append in out_dict
+    with open(blastcsv_output_filepath, 'r') as f:
+        csv_data = f.read()
+        # parse csv data
+        print("CSV data: ", csv_data)
+        # append to out_dict
+        out_dict["csv_dict"]["blast_csv"] = blastcsv_output_filepath
+        out_dict["csv_dict"]["input_file"] = infilename
+                
+        #         out_dict["csv_dict"]["classification_rank"]= [(row.split(",")[1])]
+        # print(out_dict)
+
+
 
 
     # if db_output_asn.returncode == 0:
