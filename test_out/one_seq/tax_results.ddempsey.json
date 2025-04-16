@@ -5,7 +5,7 @@
    "database_title": "ICTV VMR_MSL40.v1.20250307.EA Species-Seg-Acc Family EA Virus_Names",
    "database_size": "21,513 sequences; 615,239,971 total letters",
    "input_dir": "seq_in",
-   "errors": ""
+   "errors": "",
    "results": [  
       {
          "input_file": "AY243312.raw",
@@ -13,9 +13,9 @@
          "status": "HIT",
          "sseqid_lineage": {
             "realm": "Varidnaviria",
-	    "subrealm","",
+	    "subrealm": "",
             "phylum": "Nucleocytoviricota",
-	    "subphylum","",
+	    "subphylum": "",
             "class": "Pokkesviricetes",
             "subclass": "",
 	    "order": "Chitovirales",
@@ -35,7 +35,7 @@
          "sseqid_seg_name": "",
          "sseqid_ictvid": "ICTV19911346",
          "sseqid_vmrid": "VMR1004288",
-         "evalue": "0.0"
+         "evalue": "0.0",
          "bitscore": "3.596e+05"
       },
       {
