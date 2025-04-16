@@ -101,10 +101,10 @@
             "genus": "Orthopoxvirus",
             "species": "Orthopoxvirus variola"
          },
-         "evalue": "0.0",
          "sseqid_accession": "X69198.1",
          "sseqid_species_name": "Variola virus DNA complete genome",
-         "evalue": "1.395e+05"
+         "evalue": "0.0",
+         "bitscore": "1.395e+05"
       }
    ]
 }
