@@ -1,0 +1,102 @@
+{
+   "program_name": "seqsearch",
+   "version": "v0.3.0001b00",
+   "input_dir": "seq_in",
+   "results": [  
+      {
+         "input_file": "pox_sample.fa",
+         "input_seq": "test_seq_1",
+         "status": "CLASSIFIED",
+         "classification_rank": "species",
+         "classification_lineage": {
+            "realm": "Varidnaviria",
+            "family": "Poxviridae",
+            "genus": "Orthopoxvirus",
+            "species": "Orthopoxvirus vaccinia"
+         },
+         "blast_html": "tax_results_1.html",
+         "blast_csv": "tax_results_1.csv",
+         "evalue": "0.0",
+         "exemplarAccession": "AY243312.1",
+         "exemplarName": "Vaccinia virus WR, complete genome",
+         "score": "3.596e+05"
+      },
+      {
+         "input_file": "pox_sample.fa",
+         "input_seq": "test_seq_2",
+         "status": "CLASSIFIED",
+         "classification_rank": "species",
+         "classification_lineage": {
+            "realm": "Varidnaviria",
+            "family": "Poxviridae",
+            "genus": "Orthopoxvirus",
+            "species": "Orthopoxvirus camelpox"
+         },
+         "message": "Homologous to species within the genus, but not close enough to classify within an existing species",
+         "blast_html": "tax_results_2.html",
+         "blast_csv": "tax_results_2.csv",
+         "evalue": "0.0",
+         "exemplarAccession": "AF438165.1",
+         "exemplarName": "Camelpox virus M-96 from Kazakhstan, complete genome",
+         "score": "1.505e+05"
+      },
+      {
+         "input_file": "pox_sample.fa",
+         "input_seq": "test_seq_3",
+         "status": "CLASSIFIED",
+         "classification_rank": "species",
+         "classification_lineage": {
+            "realm": "Varidnaviria",
+            "family": "Poxviridae",
+            "genus": "Orthopoxvirus",
+            "species": "Orthopoxvirus monkeypox"
+         },
+         "message": "Homologous to species within the genus, but not close enough to classify within an existing species",
+         "blast_html": "tax_results_3.html",
+         "blast_csv": "tax_results_3.csv",
+         "evalue": "0.0",
+         "exemplarAccession": "AF380138.1",
+         "exemplarName": "Monkeypox virus strain Zaire-96-I-16, complete genome",
+         "score": "1.470e+05"
+      },
+      {
+         "input_file": "pox_sample.fa",
+         "input_seq": "test_seq_4",
+         "status": "CLASSIFIED",
+         "classification_rank": "species",
+         "classification_lineage": {
+            "realm": "Varidnaviria",
+            "family": "Poxviridae",
+            "genus": "Orthopoxvirus",
+            "species": "Orthopoxvirus ectromelia"
+         },
+         "message": "Homologous to species within the genus, but not close enough to classify within an existing species",
+         "blast_html": "tax_results_4.html",
+         "blast_csv": "tax_results_4.csv",
+         "evalue": "0.0",
+         "exemplarAccession": "AF012825.2",
+         "exemplarName": "Ectromelia virus strain Moscow, complete genome",
+         "score": "1.431e+05"
+      },
+      {
+         "input_file": "pox_sample.fa",
+         "input_seq": "test_seq_5",
+         "status": "CLASSIFIED",
+         "classification_rank": "species",
+         "classification_lineage": {
+            "realm": "Varidnaviria",
+            "family": "Poxviridae",
+            "genus": "Orthopoxvirus",
+            "species": "Orthopoxvirus variola"
+         },
+         "message": "Homologous to species within the genus, but not close enough to classify within an existing species",
+         "blast_html": "tax_results_5.html",
+         "blast_csv": "tax_results_5.csv",
+         "evalue": "0.0",
+         "exemplarAccession": "X69198.1",
+         "exemplarName": "Variola virus DNA complete genome",
+         "score": "1.395e+05"
+      }
+   ]
+}
+ 
