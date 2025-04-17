@@ -4,6 +4,8 @@
 #
 
 import argparse
+import csv
+import re
 import pandas as pd
 import json
 import os
@@ -95,7 +97,6 @@ for infilename in fasta_files:
     blasthtml_cmd = ["blast_formatter", "-archive", blastasn_output_filepath,  "-out", blasthtml_output_filepath, "-html" ]
     print("ASN Format Command:", " ".join(blastasn_cmd), "\n", "CSV Format Command:", " ".join(blastcsv_cmd), "\n", "HTML Format Command:", " ".join(blasthtml_cmd))
 
-
     db_output_asn = subprocess.run(blastasn_cmd, capture_output=True, text=True)
     print("Blast .asn output files:", blastasn_output_filepath)
     db_output_csv = subprocess.run(blastcsv_cmd, capture_output=True, text=True)
@@ -104,13 +105,20 @@ for infilename in fasta_files:
     print("Blast .html output files:", blasthtml_output_filepath)
 
     #reading html and csv files to append in out_dict
-    with open(blastcsv_output_filepath, 'r') as f:
-        csv_data = f.read()
-        # parse csv data
-        print("CSV data: ", csv_data)
+    with open(blastcsv_output_filepath ) as csvfile:
+        # read in csv file
+        delimiter = r"[#,]"
+        csv_data = csv.reader(csvfile, delimiter= " ")
         # append to out_dict
         out_dict["csv_dict"]["blast_csv"] = blastcsv_output_filepath
         out_dict["csv_dict"]["input_file"] = infilename
+        out_dict["csv_dict"]["input_seq"] = infilename.split(".")[0]
+        for row in csv_data:
+            parsed_csv_data = re.split(delimiter, row[0])
+            print(row)
+        #out_dict["csv_dict"]["classification_rank"]= 
+        #for row in csv_data
+        print(out_dict)
                 
         #         out_dict["csv_dict"]["classification_rank"]= [(row.split(",")[1])]
         # print(out_dict)
