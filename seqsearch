@@ -59,7 +59,7 @@ print("VERSION:", git_version )
         # } 
 # hello world data dictionary
 #
-hit = {
+json_hits = {
     "program_name": os.path.basename(sys.argv[0]),
     "version"  : git_version,
     "input_dir": args.indir,
@@ -111,80 +111,21 @@ for infilename in fasta_files:
         csv_data = csv.reader(csvfile, delimiter= ",")
         for row in csv_data:
             print(row)
-
-
-
-
-
+            
             # parsed_csv_data = re.split(delimiter, row[0])
             if row[0]== 'qseqid':
                 # skip header row
                 continue
-            hit= {}
-            
-             # append to hit
-            hit["blast_csv"] = blastcsv_output_filepath
+            hit= {}           # append to hit
+            hit["blast_json_csvs"] = blastcsv_output_filepath
             hit["input_file"] = infilename
             hit["input_seq"] = infilename.split(".")[0]
             hit["sseqid"]= row[1]
             hit["evalue"]= row[10]
             hit["bitscore"]= row[11]
-
-            
-            
-        
             print(hit)
-                
-
-
-
-
-    # if db_output_asn.returncode == 0:
-    #     blastasn_output_filepath == os.path.join(args.outdir, infilename + ".csv")
-    # if blastasn_output_filepath == os.path.join(args.outdir, infilename + ".csv"):
-    #     blastasn_output_filepath = os.path.join(args.outdir, infilename + ".html")
-
-
-
-    
-
-    
-
-    
-
-    
-
-
-
-    
-    
-   
-    
-     
-
-    
-
-
-   
-
-
-
-    #files are to be html, csv, asn
-    #blast runs first to creat asn then coverts to html and csv
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
+            #adds results to json dict
+            json_hits["results"].append(hit)
 
 
 #    """  print("Reading fasta file: ", fasta_file_path)
@@ -198,57 +139,6 @@ for infilename in fasta_files:
 #             print("Header: ", header)
 #             print("Sequence: ", sequence) """
 
-
-
-
-
-
-
-
-html_hello_world_pre = """<HTML>
-<HEADER><TITLE>hello world HTML"""
-
-html_hello_world_mid = """</TITLE></HEADER>
-<BODY>
-<H>Hello</H>
-<I>world"""
-
-html_hello_world_post = """</I>
-</BODY>
-</HTML>"""
-
-def concatenate_html(str_val):
-    
-    return html_hello_world_pre + str_val + html_hello_world_mid + str_val + html_hello_world_post
-
-
-csv_results_txt = """# BLASTN 2.16.0+
-# Query: AY954969.1#Kayvirus_G1 AY954969.1 Staphylococcus phage G1, complete genome
-# Database: ./blast/ICTV_VMR_b
-# Fields: query acc.ver, subject acc.ver, % identity, alignment length, mismatches, gap opens, q. start, q. end, s. start, s. end, evalue, bit score
-# 7 hits found
-AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,100.000,138715,0,0,1,138715,1,138715,0.0,2.562e+05
-AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,95.783,498,12,9,135784,136276,135594,136087,0.0,795
-AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,95.783,498,12,9,135594,136087,135784,136276,0.0,795
-AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,92.208,308,15,9,135974,136276,135594,135897,4.96e-118,427
-AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,92.208,308,15,9,135594,135897,135974,136276,4.96e-118,427
-AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,82.203,118,12,9,136164,136276,135594,135707,2.06e-17,93.5
-AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,82.203,118,12,9,135594,135707,136164,136276,2.06e-17,93.5
-# BLAST processed 1 queries
-"""
-
-#
-# read in better bogus hello world data from filesys
-#
-hello_world_data_csv_filename="hello_world_data/AY954969.csv"
-hello_world_data_html_filename="hello_world_data/AY954969.html"
-
-with open(hello_world_data_csv_filename, 'r') as f:
-    hello_world_data_csv = f.read()
-
-with open(hello_world_data_html_filename, 'r') as f:
-    hello_world_data_html = f.read()
-
 #
 # write output/results
 #
@@ -256,42 +146,10 @@ with open(hello_world_data_html_filename, 'r') as f:
 # Ensure the output directory exists
 os.makedirs(args.outdir, exist_ok=True)
 
-# seq 1 blast html output
-html_1_outpath=os.path.join(args.outdir, args.html+'_1.html')
-with open(html_1_outpath, "w") as outfile:
-    #outfile.write(concatenate_html("1"))
-    outfile.write(hello_world_data_html)
-print("Wrote: ", html_1_outpath)
-outfile.close()
-
-# seq 2 blast html output
-html_2_outpath=os.path.join(args.outdir, args.html+'_2.html')
-with open(html_2_outpath, "w") as outfile:
-    #outfile.write(concatenate_html("2"))
-    outfile.write(hello_world_data_html)
-print("Wrote: ", html_2_outpath)
-outfile.close()
-
-# seq 1 blast CSV output
-csv_1_outpath=os.path.join(args.outdir, args.html+'_1.csv')
-with open(csv_1_outpath, "w") as outfile:
-    #outfile.write(csv_results_txt)
-    outfile.write(hello_world_data_csv)
-print("Wrote: ", csv_1_outpath)
-outfile.close()
-
-# seq 2 blast CSV output
-csv_2_outpath=os.path.join(args.outdir, args.html+'_2.csv')
-with open(csv_2_outpath, "w") as outfile:
-    outfile.write(csv_results_txt)
-    outfile.write(hello_world_data_csv)
-print("Wrote: ", csv_2_outpath)
-outfile.close()
-
 # json job output/summary
 json_outpath=os.path.join(args.outdir, args.json)
 with open(json_outpath, "w") as outfile:
-    json.dump(obj=hit, fp=outfile, indent=4)
+    json.dump(obj=json_hits, fp=outfile, indent=4)
 print("Wrote: ", json_outpath)
 outfile.close()
 
