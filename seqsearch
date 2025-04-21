@@ -38,34 +38,34 @@ print("VERSION:", git_version )
 
 
 
-#
+# "input_file"             : "test12.fa",
+        #     "input_seq"              : "test_seq_1",
+        #     "status"                 : "CLASSIFIED",
+        #     "classification_rank"    : "species",
+        #     "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"WorldGenus", "species":"WorldGenus specius"},
+        #     "blast_html"             : args.html+"_1.html",
+        #     "blast_csv"              : args.html+"_1.csv",
+        # }
+        # ,
+        # "html_dict": {
+        #     "input_file"             : "test12.fa",
+        #     "input_seq"              : "test_seq_2",
+        #     "status"                 : "CLASSIFIED",
+        #     "classification_rank"    : "genus",
+        #     "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"CountryGenus"},
+        #     "message"                : "Homologous to species within the genus, but not close enough to classify within an existing species",
+        #     "blast_html"             : args.html+"_2.html",
+        #     "blast_csv"              : args.html+"_2.csv",
+        # } 
 # hello world data dictionary
 #
-out_dict = {
+hit = {
     "program_name": os.path.basename(sys.argv[0]),
     "version"  : git_version,
     "input_dir": args.indir,
-        "csv_dict":{
-            "input_file"             : "test12.fa",
-            "input_seq"              : "test_seq_1",
-            "status"                 : "CLASSIFIED",
-            "classification_rank"    : "species",
-            "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"WorldGenus", "species":"WorldGenus specius"},
-            "blast_html"             : args.html+"_1.html",
-            "blast_csv"              : args.html+"_1.csv",
-        }
-        ,
-        "html_dict": {
-            "input_file"             : "test12.fa",
-            "input_seq"              : "test_seq_2",
-            "status"                 : "CLASSIFIED",
-            "classification_rank"    : "genus",
-            "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"CountryGenus"},
-            "message"                : "Homologous to species within the genus, but not close enough to classify within an existing species",
-            "blast_html"             : args.html+"_2.html",
-            "blast_csv"              : args.html+"_2.csv",
-        }
+    "results":[]          
 }
+
 
 #
 # bogus "hello world" data
@@ -104,24 +104,37 @@ for infilename in fasta_files:
     db_output_html = subprocess.run(blasthtml_cmd, capture_output=True, text=True)
     print("Blast .html output files:", blasthtml_output_filepath)
 
-    #reading html and csv files to append in out_dict
+    #reading html and csv files to append in hit
     with open(blastcsv_output_filepath ) as csvfile:
-        # read in csv file
+        # read in csv file and set delimiter to extract data
         delimiter = r"[#,]"
-        csv_data = csv.reader(csvfile, delimiter= " ")
-        # append to out_dict
-        out_dict["csv_dict"]["blast_csv"] = blastcsv_output_filepath
-        out_dict["csv_dict"]["input_file"] = infilename
-        out_dict["csv_dict"]["input_seq"] = infilename.split(".")[0]
+        csv_data = csv.reader(csvfile, delimiter= ",")
         for row in csv_data:
-            parsed_csv_data = re.split(delimiter, row[0])
             print(row)
-        #out_dict["csv_dict"]["classification_rank"]= 
-        #for row in csv_data
-        print(out_dict)
+
+
+
+
+
+            # parsed_csv_data = re.split(delimiter, row[0])
+            if row[0]== 'qseqid':
+                # skip header row
+                continue
+            hit= {}
+            
+             # append to hit
+            hit["blast_csv"] = blastcsv_output_filepath
+            hit["input_file"] = infilename
+            hit["input_seq"] = infilename.split(".")[0]
+            hit["sseqid"]= row[1]
+            hit["evalue"]= row[10]
+            hit["bitscore"]= row[11]
+
+            
+            
+        
+            print(hit)
                 
-        #         out_dict["csv_dict"]["classification_rank"]= [(row.split(",")[1])]
-        # print(out_dict)
 
 
 
@@ -278,7 +291,7 @@ outfile.close()
 # json job output/summary
 json_outpath=os.path.join(args.outdir, args.json)
 with open(json_outpath, "w") as outfile:
-    json.dump(obj=out_dict, fp=outfile, indent=4)
+    json.dump(obj=hit, fp=outfile, indent=4)
 print("Wrote: ", json_outpath)
 outfile.close()
 
