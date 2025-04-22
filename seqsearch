@@ -110,7 +110,6 @@ for infilename in fasta_files:
     #reading html and csv files to append in hit
     with open(blastcsv_output_filepath ) as csvfile:
         # read in csv file and set delimiter to extract data
-        delimiter = r"[#,]"
         csv_data = csv.reader(csvfile, delimiter= ",")
         for row in csv_data:
             print(row)
@@ -119,13 +118,21 @@ for infilename in fasta_files:
                 # skip header row
                 continue
             hit= {}           # append to hit
-            hit["blast_json_csvs"] = blastcsv_output_filepath
+            hit["blast_csv"] = blastcsv_output_filepath
             hit["input_file"] = infilename
             hit["input_seq"] = infilename.split(".")[0]
             hit["sseqid"]= row[1]
             hit["evalue"]= row[10]
             hit["bitscore"]= row[11]
             hit["qseqid"]= row[0]
+            hit["blast_html"] = blasthtml_output_filepath
+            if hit["sseqid"]:
+                delimiter = r"[#,]"
+                hit["sseqid_accession"]= re.split(delimiter, row[1])[0]
+                hit["sseqid_species_name"]= re.split(delimiter, row[1])[1]
+
+
+
             if not row[0]:
                 hit["status"] = "NO_HITS"
             else:
