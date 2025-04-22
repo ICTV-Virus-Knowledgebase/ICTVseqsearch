@@ -62,6 +62,9 @@ print("VERSION:", git_version )
 json_hits = {
     "program_name": os.path.basename(sys.argv[0]),
     "version"  : git_version,
+    "database_name": args.blastdb,
+    "database_title": "",
+    "errors": "",
     "input_dir": args.indir,
     "results":[]          
 }
@@ -111,7 +114,6 @@ for infilename in fasta_files:
         csv_data = csv.reader(csvfile, delimiter= ",")
         for row in csv_data:
             print(row)
-            
             # parsed_csv_data = re.split(delimiter, row[0])
             if row[0]== 'qseqid':
                 # skip header row
@@ -123,6 +125,11 @@ for infilename in fasta_files:
             hit["sseqid"]= row[1]
             hit["evalue"]= row[10]
             hit["bitscore"]= row[11]
+            hit["qseqid"]= row[0]
+            if not row[0]:
+                hit["status"] = "NO_HITS"
+            else:
+                hit["status"] = "HITS"
             print(hit)
             #adds results to json dict
             json_hits["results"].append(hit)
