@@ -11,6 +11,7 @@ import json
 import os
 import sys
 import subprocess
+import glob
 #
 # parse ARGS
 #
@@ -108,38 +109,42 @@ for infilename in fasta_files:
     print("Blast .html output files:", blasthtml_output_filepath)
 
     #reading html and csv files to append in hit
-    with open(blastcsv_output_filepath ) as csvfile:
-        # read in csv file and set delimiter to extract data
-        csv_data = csv.reader(csvfile, delimiter= ",")
-        for row in csv_data:
-            print(row)
-            # parsed_csv_data = re.split(delimiter, row[0])
-            if row[0]== 'qseqid':
-                # skip header row
-                continue
-            hit= {}           # append to hit
-            hit["blast_csv"] = blastcsv_output_filepath
-            hit["input_file"] = infilename
-            hit["input_seq"] = infilename.split(".")[0]
-            hit["sseqid"]= row[1]
-            hit["evalue"]= row[10]
-            hit["bitscore"]= row[11]
-            hit["qseqid"]= row[0]
-            hit["blast_html"] = blasthtml_output_filepath
-            if hit["sseqid"]:
-                delimiter = r"[#,]"
-                hit["sseqid_accession"]= re.split(delimiter, row[1])[0]
-                hit["sseqid_species_name"]= re.split(delimiter, row[1])[1]
-
-
-
-            if not row[0]:
-                hit["status"] = "NO_HITS"
-            else:
+    # read in csv file and set delimiter to extract data
+    for file in [blastcsv_output_filepath]:
+         try:
+            raw_data = pd.read_csv(file)
+        # Process the file only if it's successfully read
+            df = pd.read_csv(file, header=0, names=["qseqid", "sseqid", "pidentlength", "mismatch", "gaopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"])
+            for index, row in df.iterrows():
+                print(row)
+                hit= {}           # append to hit
+                hit["blast_csv"] = blastcsv_output_filepath
+                hit["input_file"] = infilename
+                hit["input_seq"] = infilename.split(".")[0]
+                hit["sseqid"]= row["sseqid"]
+                hit["evalue"]= row["evalue"]
+                hit["bitscore"]= row["bitscore"]
+                hit["qseqid"]= row["qseqid"]
+                hit["blast_html"] = blasthtml_output_filepath
                 hit["status"] = "HITS"
-            print(hit)
+                if hit["sseqid"]:
+                    delimiter = r"[#,]"
+                    hit["sseqid_accession"]= re.split(delimiter, hit["sseqid"])[0]
+                    hit["sseqid_species_name"]= re.split(delimiter, hit["sseqid"])[1]
+                    # Print hit dictionary
+                    print("Hit: ", hit)
             #adds results to json dict
-            json_hits["results"].append(hit)
+                    json_hits["results"].append(hit)
+         except pd.errors.EmptyDataError:
+            print(file, "is empty and has been skipped.", "status: NO_HITS")
+
+
+            
+            
+            
+    
+    
+            
 
 
 #    """  print("Reading fasta file: ", fasta_file_path)
