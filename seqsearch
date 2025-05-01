@@ -114,7 +114,7 @@ for infilename in fasta_files:
          try:
             raw_data = pd.read_csv(file)
         # Process the file only if it's successfully read
-            df = pd.read_csv(file, header=0, names=["qseqid", "sseqid", "pidentlength", "mismatch", "gaopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"])
+            df = pd.read_csv(file, header=0, names=["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"])
             for index, row in df.iterrows():
                 print(row)
                 hit= {}           # append to hit
@@ -129,6 +129,9 @@ for infilename in fasta_files:
                 hit["status"] = "HITS"
                 if hit["sseqid"]:
                     delimiter = r"[#,]"
+                    print("----------------------------\n# hit:")
+                    print(hit)
+                    print('hit["sseqid"]:'+hit["sseqid"]+"; delimiter="+delimiter)
                     hit["sseqid_accession"]= re.split(delimiter, hit["sseqid"])[0]
                     hit["sseqid_species_name"]= re.split(delimiter, hit["sseqid"])[1]
                     # Print hit dictionary
