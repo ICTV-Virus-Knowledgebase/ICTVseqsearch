@@ -129,9 +129,6 @@ for infilename in fasta_files:
                 hit["status"] = "HITS"
                 if hit["sseqid"]:
                     delimiter = r"[#,]"
-                    print("----------------------------\n# hit:")
-                    print(hit)
-                    print('hit["sseqid"]:'+hit["sseqid"]+"; delimiter="+delimiter)
                     hit["sseqid_accession"]= re.split(delimiter, hit["sseqid"])[0]
                     hit["sseqid_species_name"]= re.split(delimiter, hit["sseqid"])[1]
                     # Print hit dictionary
