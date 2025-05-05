@@ -108,8 +108,8 @@ for infilename in fasta_files:
     db_output_html = subprocess.run(blasthtml_cmd, capture_output=True, text=True)
     print("Blast .html output files:", blasthtml_output_filepath)
 
-    #reading html and csv files to append in hit
-    # read in csv file and set delimiter to extract data
+   
+    # read in csv file and set headers to extract data
     for file in [blastcsv_output_filepath]:
          try:
             raw_data = pd.read_csv(file)
@@ -127,16 +127,37 @@ for infilename in fasta_files:
                 hit["qseqid"]= row["qseqid"]
                 hit["blast_html"] = blasthtml_output_filepath
                 hit["status"] = "HITS"
+                hit["sseqid_lineage"]= {}
                 if hit["sseqid"]:
                     delimiter = r"[#,]"
                     hit["sseqid_accession"]= re.split(delimiter, hit["sseqid"])[0]
                     hit["sseqid_species_name"]= re.split(delimiter, hit["sseqid"])[1]
-                    # Print hit dictionary
+                
                     print("Hit: ", hit)
             #adds results to json dict
                     json_hits["results"].append(hit)
          except pd.errors.EmptyDataError:
             print(file, "is empty and has been skipped.", "status: NO_HITS")
+
+# if df.bool== True:
+#     df2= pd.read_csv("processed_accessions_b.tsv", sep="\t", header=0)
+#     print(df2)
+
+
+
+
+    # hit["sseqid_lineage"]= {}
+    # for index, row in df2.iterrows():
+    #     print(row)
+    #     if hit["sseqid"] == row["Accession"]:
+    #         hit["sseqid_lineage"]["Genus"]= row["Genus"]
+    #         if row["Accession_Index"] > 1:
+    #             hit["sseqid_lineage"]["seqnum"]= row["Segment_Name"]
+    #             hit["sseqid_lineage"]["species"]= row["Species"]
+                # print("Hit: ", hit["sseqid_lineage"])
+                # json_hits["results"].append(hit["sseqid_lineage"])
+
+        
 
 
             
