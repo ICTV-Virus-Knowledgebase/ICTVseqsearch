@@ -114,6 +114,8 @@ for infilename in fasta_files:
          try:
             raw_data = pd.read_csv(file)
         # Process the file only if it's successfully read
+            #df is df for the blast csv file
+            #df2 is df for the processed_accessions_b.tsv file
             df = pd.read_csv(file, header=0, names=["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"])
             df2= pd.read_csv("processed_accessions_b.tsv", sep="\t", header=0)
             for index, row in df.iterrows():
@@ -137,38 +139,47 @@ for infilename in fasta_files:
                     hit["sseqid_species_name"]= re.split(delimiter, hit["sseqid"])[1]
                     hit["sseqid_species_name"] = re.sub("_", " ", hit["sseqid_species_name"])
                     hit["sseqid"]= hit["sseqid_accession"]
+                #splitting the qseqid row into two parts to just show the qseqid without everything after the first #
                 delimiter= r"[#]"
                 hit["qseqid"]= re.split(delimiter, hit["qseqid"])[0]
+
+                #reading into the processed_accessions_b.tsv file
                 
                 for index, row in df2.iterrows():
-                     delimiter = r"[_]"
-                     hit["sseqid_lineage"]["genus"]= re.split(delimiter, hit["sseqid_species_name"])[0]
-                     if row["Accession_Index"] > 1:
-                         hit["sseqid_lineage"]["seqnum"]= row["Segment_Name"]
-                         hit["sseqid_lineage"]["species"]= row["Species"]
-                         print("Hit: ", hit)
+                     split_seqaccession_at_dot = re.split(r"\.", hit["sseqid_accession"])
+                     sseqid_without_dot= split_seqaccession_at_dot[0].strip()
+                     print("Sseqid without dot: ", sseqid_without_dot)
+                     hit["accession"]= row ["Accession"]
+                     if str(row["Accession"]).strip== str(sseqid_without_dot).strip():
+                         print("Found a match: ",["Accession"])
+                         hit["sseqid_lineage"]["species"]= ["Species"]
+                         hit["sseqid_lineage"]["genus"]= ["Genus"]
+
+                     #remove the second part of the sseqid_accession
+                     
+                    
+                    #  delimiter = r"[ ]"
+                    #  hit["sseqid_lineage"]["genus"]= re.split(delimiter, hit["sseqid_species_name"])[0]
+                     
+                    #  hit["sseqid_lineage"]["species"]= re.split(delimiter, row["Species"])
+                    #  if 
+                    #      print("THIS IS Genus: ", hit["sseqid_lineage"]["genus"])
+                        #  hit["sseqid_lineage"]["species"]= df.loc["Species"]
+
+                    
+                     #outputting accessions with their segment number by checking if the accession index is greater than 1
+                    #  if row["Accession_Index"] > 1:
+                    #      hit["sseqid_lineage"]["seqnum"] = row["Segment_Name"]
+                         
+                    #  else:
+                    #      hit["sseqid_lineage"]["seqnum"] = "Seq1"
+                    #  print("Hit: ", hit)
             #adds results to json dict
-                         json_hits["results"].append(hit)
+                     json_hits["results"].append(hit)
+                     break
          except pd.errors.EmptyDataError:
             print(file, "is empty and has been skipped.", "status: NO_HITS")
 
-# if df.bool== True:
-#     
-#     print(df2)
-
-
-
-
-    # hit["sseqid_lineage"]= {}
-    # for index, row in df2.iterrows():
-    #     print(row)
-    #     if hit["sseqid"] == row["Accession"]:
-    #         hit["sseqid_lineage"]["Genus"]= row["Genus"]
-    #         if row["Accession_Index"] > 1:
-    #             hit["sseqid_lineage"]["seqnum"]= row["Segment_Name"]
-    #             hit["sseqid_lineage"]["species"]= row["Species"]
-    #             print("Hit: ", hit["sseqid_lineage"])
-    #             json_hits["results"].append(hit["sseqid_lineage"])
 
         
 
