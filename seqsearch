@@ -134,6 +134,7 @@ for infilename in fasta_files:
                 hit["evalue"]= row["evalue"]
                 hit["bitscore"]= row["bitscore"]
                 hit["qseqid"]= row["qseqid"]
+                hit["sseqid"]= row["sseqid"]
                 hit["blast_html"] = blasthtml_output_filepath
                 hit["status"] = "HITS"
                 #establishing dict in hit dict
