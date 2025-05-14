@@ -24,6 +24,29 @@ To create conda environments:
    * [./create_conda_env_openpyxl3.sh](./create_conda_env_openpyxl3.sh)
    * [./create_conda_env_openpyxl3_blast240.sh](./create_conda_env_openpyxl3_blast240.sh)
 
+<h2>Quick Start/Test</h2>
+
+```
+# setup env
+./create_conda_env_openpyxl3.sh
+conda activate conda/vmr_openpyxl3
+
+# parse VMR.xlsx -> processed_accessions_b.tsv
+./VMR_to_fasta.py -mode VMR -ea B -VMR_file_name VMRs/VMR_MSL40.v1.20250307_test_with_longest.xlsx -v
+
+# fetch fastas from NCBI and reformat headers
+./VMR_to_fasta.py -mode fasta -ea b -email $USER@uab.edu -v
+
+# build blastdb
+./makedatabase.sh
+
+# search test sequences
+./seqsearch -in test_data/one_seq -out test_out/one_seq
+
+# compare results to expected
+diff -w -u test_out/one_seq/tax_results.json test_out/one_seq/tax_results.json.good |dwdiff -u --color
+```
+
 <h2>Usage - VMR_to_fasta.py</h3>
 
   Main script is VMR_to_fasta.py. The process is broken into steps via a argument dubbed "mode". 
