@@ -1,35 +1,330 @@
 {
     "program_name": "seqsearch",
-    "version": "v0.3.af2e967",
+    "version": "v0.3.c786cad",
+    "database_name": "./blast/ICTV_VMR_b",
+    "database_title": "",
+    "errors": "",
     "input_dir": "test_data/one_seq",
     "results": [
         {
-            "input_file": "test12.fa",
-            "input_seq": "test_seq_1",
-            "status": "CLASSIFIED",
-            "classification_rank": "species",
-            "classification_lineage": {
-                "realm": "HelloRealm",
-                "family": "BigFamily",
-                "genus": "WorldGenus",
-                "species": "WorldGenus specius"
+            "blast_csv": "test_out/one_seq/HM119428.fa.csv",
+            "input_file": "HM119428.fa",
+            "input_seq": "HM119428",
+            "evalue": 0.0,
+            "bitscore": 11841,
+            "qseqid": "HM119428.1",
+            "sseqid": "HM119428.1#Phlebovirus_candiruense#L",
+            "blast_html": "test_out/one_seq/HM119428.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Phlebovirus",
+                "species": "Phlebovirus candiruense"
             },
-            "blast_html": "tax_results_1.html",
-            "blast_csv": "tax_results_1.csv"
+            "sseqid_accession": "HM119428.1"
         },
         {
-            "input_file": "test12.fa",
-            "input_seq": "test_seq_2",
-            "status": "CLASSIFIED",
-            "classification_rank": "genus",
-            "classification_lineage": {
-                "realm": "HelloRealm",
-                "family": "BigFamily",
-                "genus": "CountryGenus"
+            "blast_csv": "test_out/one_seq/KT732817.fa.csv",
+            "input_file": "KT732817.fa",
+            "input_seq": "KT732817",
+            "evalue": 0.0,
+            "bitscore": 2111.0,
+            "qseqid": "KT732817.1",
+            "sseqid": "KT732817.1#Zirakzivirus_serni",
+            "blast_html": "test_out/one_seq/KT732817.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Zirakzivirus",
+                "species": "Zirakzivirus serni"
             },
-            "message": "Homologous to species within the genus, but not close enough to classify within an existing species",
-            "blast_html": "tax_results_2.html",
-            "blast_csv": "tax_results_2.csv"
+            "sseqid_accession": "KT732817.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/KT732817.fa.csv",
+            "input_file": "KT732817.fa",
+            "input_seq": "KT732817",
+            "evalue": 2.07e-08,
+            "bitscore": 58.4,
+            "qseqid": "KT732817.1",
+            "sseqid": "KT732817.1#Zirakzivirus_serni",
+            "blast_html": "test_out/one_seq/KT732817.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Zirakzivirus",
+                "species": "Zirakzivirus serni"
+            },
+            "sseqid_accession": "KT732817.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/KT732817.fa.csv",
+            "input_file": "KT732817.fa",
+            "input_seq": "KT732817",
+            "evalue": 2.07e-08,
+            "bitscore": 58.4,
+            "qseqid": "KT732817.1",
+            "sseqid": "KT732817.1#Zirakzivirus_serni",
+            "blast_html": "test_out/one_seq/KT732817.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Zirakzivirus",
+                "species": "Zirakzivirus serni"
+            },
+            "sseqid_accession": "KT732817.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/KT732817.fa.csv",
+            "input_file": "KT732817.fa",
+            "input_seq": "KT732817",
+            "evalue": 1.6e-09,
+            "bitscore": 62.1,
+            "qseqid": "KT732817.1",
+            "sseqid": "KT732816.1#Zirakzivirus_serni",
+            "blast_html": "test_out/one_seq/KT732817.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Zirakzivirus",
+                "species": "Zirakzivirus serni"
+            },
+            "sseqid_accession": "KT732816.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 0.0,
+            "bitscore": 49615.0,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 0.0,
+            "bitscore": 1356.0,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 0.0,
+            "bitscore": 1356.0,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 4.86e-22,
+            "bitscore": 108.0,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 4.86e-22,
+            "bitscore": 108.0,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 2.94e-14,
+            "bitscore": 82.4,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 2.94e-14,
+            "bitscore": 82.4,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 1.77e-11,
+            "bitscore": 73.1,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 1.77e-11,
+            "bitscore": 73.1,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 2.29e-10,
+            "bitscore": 69.4,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 2.29e-10,
+            "bitscore": 69.4,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 1.07e-08,
+            "bitscore": 63.9,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 1.07e-08,
+            "bitscore": 63.9,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 2.31e-05,
+            "bitscore": 52.8,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
+        },
+        {
+            "blast_csv": "test_out/one_seq/PP467602.fa.csv",
+            "input_file": "PP467602.fa",
+            "input_seq": "PP467602",
+            "evalue": 2.31e-05,
+            "bitscore": 52.8,
+            "qseqid": "PP467602.1",
+            "sseqid": "PP467602.1#Wargodvirus_xiongnu",
+            "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "sseqid_lineage": {
+                "genus": "Wargodvirus",
+                "species": "Wargodvirus xiongnu"
+            },
+            "sseqid_accession": "PP467602.1"
         }
     ]
 }

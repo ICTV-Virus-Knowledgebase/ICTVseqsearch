@@ -90,6 +90,7 @@ print("FASTA files found: ", fasta_files)
 # iterate over fasta files
 for infilename in fasta_files:
     # read in fasta file
+    print("\n\n----------------------------------------------------------------------")
     print("Processing fasta file: ", infilename)
     fasta_file_path = os.path.join(args.indir, infilename)
     blastasn_output_filepath= os.path.join(args.outdir, infilename + ".asn")
@@ -118,17 +119,17 @@ for infilename in fasta_files:
         # Process the file only if it's successfully read
             #df is df for the blast csv file
             #df2 is df for the processed_accessions_b.tsv file
-            df = pd.read_csv(file, header=0, names=["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"])
+            df = pd.read_csv(file, header=None, names=["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"])
             print( "Loading output file", file)
             print( "Number of rows in blast csv file: ", len(df))
-            print( "Number of rows in raw data: ", len(raw_data))
+            if args.verbose: print(df)
             df2= pd.read_csv("processed_accessions_b.tsv", sep="\t", header=0)
             print("Number of rows in processed_accessions_b.tsv file: ", len(df2))
             #initializes the sBaseAccession column in df that is used for joining
             df["sBaseAccession"]= df["sseqid"].astype(str).str.replace(r'\.\d+.*$','',regex=True)
             #merging the two dataframes by the sBaseAccession column and the Accession column
             merge_dfs= pd.merge(df,df2, left_on="sBaseAccession", right_on= "Accession", how="left")
-            print(merge_dfs)
+            if args.verbose: print(merge_dfs)
 
             #iterate over the merged dataframe to extract the data to hit dict
             for index, row in merge_dfs.iterrows():
