@@ -21,27 +21,25 @@
 #SBATCH --mem-per-cpu=30000
 #
 EA=b
-ACCESSION_TSV=processed_accessions_$EA.tsv
-ALL_FASTA=./fasta_new_vmr_$EA/vmr_$EA.fa
+ACCESSION_TSV=processed_accessions_$EA.fa_names.tsv
+ALL_FASTA=./fasta_new_vmr_$EA.fa
 SRC_DIR=$(dirname $ALL_FASTA)
 BLASTDB=./blast/ICTV_VMR_$EA
-FIRST_FASTA=$(awk 'BEGIN{FS="\t";GENUS=7;ACC=5}(NR>1){print $GENUS"/"$ACC".fa"}' $ACCESSION_TSV|head -1)
-OUT_FILEPATH=$(awk 'BEGIN{FS="\t";GENUS=7;ACC=5}(NR>1){print $GENUS"/"$ACC}' $ACCESSION_TSV|head -1)
+FIRST_FASTA=$(awk 'BEGIN{FS="\t";GENUS=25;ACC=6}(NR>1){print $GENUS"/"$ACC".fa"}' $ACCESSION_TSV|head -1)
+OUT_FILEPATH=$(awk 'BEGIN{FS="\t";GENUS=25;ACC=6}(NR>1){print $GENUS"/"$ACC}' $ACCESSION_TSV|head -1)
 
-echo "# concatenate individual fasta's into all.fa"
-# if any fastas are updated, rebuild master fasta
-if [[ ! -e "$ALL_FASTA" || "$(find $SRC_DIR -newer $ALL_FASTA|wc -l)" -gt 0 ]]; then
-    echo "REBUILD $ALL_FASTA"
-    rm $ALL_FASTA
-    for FA in $(awk 'BEGIN{FS="\t";GENUS=7;ACC=5}(NR>1){print $GENUS"/"$ACC".fa"}' $ACCESSION_TSV); do
-	echo "cat $SRC_DIR/$FA >> $ALL_FASTA"
-	cat $SRC_DIR/$FA >> $ALL_FASTA
-	wc -l $ALL_FASTA
-    done
-else
-    echo "SKIP: $ALL_FASTA is up-to-date."
+# validate
+if [ ! -e "$ACCESSION_TSV" ]; then
+    echo "# ERROR: missing input file: $ACCESSION_TSV"
+    exit 1
 fi
 
+
+ACCESSION_COUNT=$(tail -n +2 $ACCESSION_TSV |wc -l)
+echo "# concatenate all $ACCESSION_COUNT formatted fastas"
+echo "cut -f 31 $ACCESSION_TSV | tail -n +2 | xargs cat > $ALL_FASTA"
+cut -f 31 $ACCESSION_TSV | tail -n +2 | xargs cat > $ALL_FASTA
+ls -lsh $ALL_FASTA
 
 echo "# Make the BLAST database"
 if [ "$(which makeblastdb 2>/dev/null)" == "" ]; then 
@@ -49,8 +47,8 @@ if [ "$(which makeblastdb 2>/dev/null)" == "" ]; then
     module load BLAST
 fi
 
-echo 'makeblastdb -in $ALL_FASTA -input_type "fasta" -title "ICTV VMR refseqs" -out "$BLASTDB" -dbtype "nucl"'
-makeblastdb -in $ALL_FASTA -input_type "fasta" -title "ICTV VMR refseqs" -out "$BLASTDB" -dbtype "nucl"
+echo 'makeblastdb -in $ALL_FASTA -input_type "fasta" -title "ICTV VMR_MSL40.v1.20250307 (all)" -out "$BLASTDB" -dbtype "nucl"'
+makeblastdb -in $ALL_FASTA -input_type "fasta" -title "ICTV VMR_MSL40.v1.20250307 (all)" -out "$BLASTDB" -dbtype "nucl"
 
 echo "# Example usage:"
 echo "# mkdir -p ./results/$EA/$(dirname $OUT_FILEPATH)"
