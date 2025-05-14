@@ -116,7 +116,7 @@ for infilename in fasta_files:
     for file in [blastcsv_output_filepath]:
          try:
             raw_data = pd.read_csv(file)
-        # Process the file only if it's successfully read
+            # Process the file only if it's successfully read
             #df is df for the blast csv file
             #df2 is df for the processed_accessions_b.tsv file
             df = pd.read_csv(file, header=None, names=["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"])
@@ -131,6 +131,17 @@ for infilename in fasta_files:
             merge_dfs= pd.merge(df,df2, left_on="sBaseAccession", right_on= "Accession", how="left")
             if args.verbose: print(merge_dfs)
 
+            # check if some blast results didn't match to known accessions
+            merge_missing = merge_dfs["Species"].isna().sum()
+            if merge_missing > 0: 
+                print(f"INTERNAL ERROR: {merge_missing} out of {len(df)} sseqid.base_accession's didn't match to processed_accessions table.")
+                print("INTERNAL ERROR: check if your blastdb and processed_accesions table are out of sync.")
+
+            if len(df) < len(merge_dfs):
+                print("INTERNAL ERROR: merging blast results to processed_accessions added extra rows.")
+                print("INTERNAL ERROR: check if your blastdb and processed_accesions table are out of sync.")
+                sys.exit(1)
+                      
             #iterate over the merged dataframe to extract the data to hit dict
             for index, row in merge_dfs.iterrows():
                 

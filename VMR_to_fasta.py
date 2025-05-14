@@ -98,7 +98,12 @@ def load_VMR_data():
             if args.verbose: print("\tcolumns: ",raw_vmr_data.columns)
 
             # list of the columns to extract from raw_vmr_data
-            vmr_cols_needed = ['Isolate ID','Exemplar or additional isolate','Species Sort','Isolate Sort','Virus GENBANK accession','Species','Genome coverage','Genus']
+            vmr_cols_needed = [
+                'Isolate ID','Exemplar or additional isolate','Species Sort','Isolate Sort',
+                'Realm','Subrealm','Kingdom','Subkingdom','Phylum','Subphylum','Class','Subclass',
+                'Order','Suborder','Family','Subfamily','Genus','Subgenus','Species',
+                'ICTV_ID','Virus name(s)',
+                'Virus GENBANK accession','Genome coverage']
             
             for col_name in list(raw_vmr_data.columns):
                 if col_name in vmr_cols_needed:
@@ -234,7 +239,12 @@ def test_accession_IDs(df):
 # 4. Accession Numbers in the same block are seperated by a ; or a , or a :
 ##############################################################################################################
     # defining new DataFrame before hand
-    processed_accessions = pd.DataFrame(columns=['Isolate_ID','Species','Exemplar_Additional','Accession_Index','Accession','Segment_Name',"Genus","Start_Loc","End_Loc","Sort","Isolate_Sort","Original_GENBANK_Accessions","Errors"])
+    processed_accessions = pd.DataFrame(columns=[
+        'ICTV_ID','Isolate_ID','Exemplar_Additional','Accession_Index','Segment_Name','Accession', # 0-5
+        'Start_Loc','End_Loc','Sort','Isolate_Sort','Original_GENBANK_Accessions','Errors', # 6-11
+        'Realm','Subrealm','Kingdom','Subkingdom','Phylum','Subphylum','Class','Subclass','Order','Suborder', # 12-21
+        'Family','Subfamily','Genus','Subgenus','Species','Virus_Names' # 22-27
+    ])
     # pattern for accessions qualified by "(START,STOP)" subsequence qualifiers
     accession_start_end_regex = r'(\w+)\s*\((\d+)(\.)(\w+)(\))'
 
@@ -261,10 +271,10 @@ def test_accession_IDs(df):
         # iterate over accessions
         for acc_dict in gb_accessions_dict:
             # default subsequence locations (none)
-            start_loc=""
-            end_loc=""
+            start_loc=''
+            end_loc=''
             # check for accessions followed by (INT,INT) 
-            re_result=re.match(accession_start_end_regex, acc_dict["accession"])
+            re_result=re.match(accession_start_end_regex, acc_dict['accession'])
 
             if re_result:
                 # accession is qualified - parse out accession from START/STOP nt coords
@@ -273,24 +283,41 @@ def test_accession_IDs(df):
                 end_loc  = re_result.group(4)
             else:
                 # use accession as is
-                processed_accession = acc_dict["accession"]
+                processed_accession = acc_dict['accession']
                 
             processed_accessions.loc[len(processed_accessions.index)] = [
+                # 0-5
+                df['ICTV_ID'][entry_count], 
                 df['Isolate ID'][entry_count],
-                df['Species'][entry_count],
                 df['Exemplar or additional isolate'][entry_count],
-                acc_dict["accession_index"],
+                acc_dict['accession_index'],
+                acc_dict['segment_name'],
                 processed_accession,
-                acc_dict["segment_name"],
-                df['Genus'][entry_count],
+                # 6-11
                 start_loc,
                 end_loc,
                 df['Species Sort'][entry_count],
                 df['Isolate Sort'][entry_count],
                 df['Virus GENBANK accession'][entry_count],
-                #            df['Virus REFSEQ accession'][entry_count],
-                "" # errors
-                
+                '', # errors
+                # 12-21
+                df['Realm'][entry_count],
+                df['Subrealm'][entry_count],
+                df['Kingdom'][entry_count],
+                df['Subkingdom'][entry_count],
+                df['Phylum'][entry_count],
+                df['Subphylum'][entry_count],
+                df['Class'][entry_count],
+                df['Subclass'][entry_count],
+                df['Order'][entry_count],
+                df['Suborder'][entry_count],
+                # 22-27
+                df['Family'][entry_count],
+                df['Subfamily'][entry_count],
+                df['Genus'][entry_count],
+                df['Subgenus'][entry_count],
+                df['Species'][entry_count],
+                df['Virus name(s)'][entry_count],
             ]
             #print("'"+processed_accession+"'"+' has been cleaned.')
 
@@ -316,6 +343,7 @@ def fetch_fasta(processed_accession_file_name):
         if args.verbose: print(f"Directory '{fasta_dir}' created successfully.")
 
     bad_accessions_fname="./bad_accessions_"+args.ea.lower()+".tsv"
+    processed_accessions_fanames_fname=processed_accession_file_name.replace(".tsv","")+".fa_names.tsv"
 
     #Check to see if fasta data exists and, if it does, loads the accessions numbers from it into an np array.
     if args.verbose: print("  loading:", processed_accession_file_name)
@@ -340,19 +368,20 @@ def fetch_fasta(processed_accession_file_name):
     count = 0
     for accession_ID in Accessions['Accession']:
             row = Accessions.loc[count]
-            Isolate_ID   = row.iloc[0]
-            Species      = row.iloc[1]
+            Isolate_ID   = row.iloc[1]
             Isolate_type = row.iloc[2]
-           # accession_ID = row.iloc[4]
-            segment      = row.iloc[5]
-            genus_name   = row.iloc[6]
-            if args.verbose: print("Fetch [",count,"] ID:",Isolate_ID," Species:",Species," Segment:",segment," Accession:",accession_ID)
+            segment      = row.iloc[4]
+            # accession_ID = row.iloc[6]
+            family_name  = row.iloc[22]
+            genus_name   = row.iloc[24]
+            species_name = row.iloc[26]
+            virus_names  = row.iloc[27]
+            if args.verbose: print("Fetch [",count,"] ID:",Isolate_ID," Species:",species_name," Segment:",segment," Accession:",accession_ID)
 
             # emtpy cell becomes float:NaN!
-            if segment != segment: 
-                segment = ""
-            if genus_name != genus_name: 
-                genus_name = ""
+            if segment != segment:         segment = ""
+            if genus_name != genus_name:   genus_name = ""
+            if family_name != family_name: family_name = ""
                 
             # fasta_file_name
             genus_dir = fasta_dir+"/"+str(genus_name)
@@ -361,6 +390,10 @@ def fetch_fasta(processed_accession_file_name):
             accession_raw_file_name = genus_dir+"/"+str(accession_ID)+".raw"
             accession_fa_file_name = genus_dir+"/"+str(accession_ID)+".fa"
             
+            # Assign the computed values to the new columns
+            Accessions.loc[count, "accession_raw_file_name"] = accession_raw_file_name
+            Accessions.loc[count, "accession_fa_file_name"] = accession_fa_file_name
+    
             # make sure dir exists
             if not os.path.exists(genus_dir):
                 # Create the directory if it doesn't exist
@@ -415,11 +448,26 @@ def fetch_fasta(processed_accession_file_name):
                 fa_seq =    raw_fa.split("\n",1)[1]
 
                 # build ICTV-modified header
-                #  ACCESSION#VMR_SPECIES[#VMR_SEG] NCBI_HEADER
+                #  ACCESSION#VMR_SPECIES[#VMR_SEG] FAMILY TYPE VMR_ID ISOLATE_NAME 
+
+                #field_sep="#"
+                field_sep="-"
+                # remove spaces and field separators
+                species_name_cleaned = str(  species_name).replace(" ","_").replace("-","_")
+                segment_cleaned =      str(       segment).replace(" ","_").replace("-","_")
+                accession_cleaned =    str(ncbi_accession)
                 if str(segment).lower() == "":
-                    desc_line = ">"+str(ncbi_accession)+"#"+str(Species.replace(" ","_"))                 +" "+fa_desc
+                    # leave out #SEG
+                    #desc_line = '>'+field_sep.join([str(ncbi_accession),str(species_name.replace(" ","_"))])
+                    desc_line = '>'+field_sep.join([species_name_cleaned,"",accession_cleaned])
                 else:
-                    desc_line = ">"+str(ncbi_accession)+"#"+str(Species.replace(" ","_"))+"#"+str(segment)+" "+fa_desc
+                    # include #SEG
+                    #desc_line = '>'+'#'.join([str(ncbi_accession),str(species_name.replace(" ","_")),str(segment)])
+                    desc_line = '>'+field_sep.join([species_name_cleaned,segment_cleaned,accession_cleaned])
+                # add comments to fasta header
+                #desc_line = ' '.join([desc_line,family_name,Isolate_type,Isolate_ID,virus_names])
+                desc_line = ' '.join([desc_line,family_name,Isolate_type,virus_names])
+                
                 if args.verbose: print("    ", desc_line)
 
                 # write ICTV formated header to fasta
@@ -429,10 +477,15 @@ def fetch_fasta(processed_accession_file_name):
                 
             count=count+1
 
+    # output accession table, WITH fasta filenames
+    pd.DataFrame.to_csv(Accessions,processed_accessions_fanames_fname,sep='\t')
+    print("Wrote to {0} rows, {1} columns to {2}".format(*Accessions.shape,processed_accessions_fanames_fname) )
+
     # wrap up and report errors
     print("Bad_Accession count:", len(bad_accessions.index))
     pd.DataFrame.to_csv(bad_accessions,bad_accessions_fname,sep='\t')
     print("Wrote to ", bad_accessions_fname)
+
     
 #######################################################################################################################################
 # Calls makedatabase.sh. Uses 'all.fa'
