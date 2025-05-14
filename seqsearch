@@ -4,11 +4,15 @@
 #
 
 import argparse
+import csv
+import re
 import pandas as pd
 import json
 import os
 import sys
 import subprocess
+import glob
+import numpy
 #
 # parse ARGS
 #
@@ -36,34 +40,37 @@ print("VERSION:", git_version )
 
 
 
-#
+# "input_file"             : "test12.fa",
+        #     "input_seq"              : "test_seq_1",
+        #     "status"                 : "CLASSIFIED",
+        #     "classification_rank"    : "species",
+        #     "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"WorldGenus", "species":"WorldGenus specius"},
+        #     "blast_html"             : args.html+"_1.html",
+        #     "blast_csv"              : args.html+"_1.csv",
+        # }
+        # ,
+        # "html_dict": {
+        #     "input_file"             : "test12.fa",
+        #     "input_seq"              : "test_seq_2",
+        #     "status"                 : "CLASSIFIED",
+        #     "classification_rank"    : "genus",
+        #     "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"CountryGenus"},
+        #     "message"                : "Homologous to species within the genus, but not close enough to classify within an existing species",
+        #     "blast_html"             : args.html+"_2.html",
+        #     "blast_csv"              : args.html+"_2.csv",
+        # } 
 # hello world data dictionary
 #
-out_dict = {
+json_hits = {
     "program_name": os.path.basename(sys.argv[0]),
     "version"  : git_version,
+    "database_name": args.blastdb,
+    "database_title": "",
+    "errors": "",
     "input_dir": args.indir,
-        "csv_dict":{
-            "input_file"             : "test12.fa",
-            "input_seq"              : "test_seq_1",
-            "status"                 : "CLASSIFIED",
-            "classification_rank"    : "species",
-            "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"WorldGenus", "species":"WorldGenus specius"},
-            "blast_html"             : args.html+"_1.html",
-            "blast_csv"              : args.html+"_1.csv",
-        }
-        ,
-        "html_dict": {
-            "input_file"             : "test12.fa",
-            "input_seq"              : "test_seq_2",
-            "status"                 : "CLASSIFIED",
-            "classification_rank"    : "genus",
-            "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"CountryGenus"},
-            "message"                : "Homologous to species within the genus, but not close enough to classify within an existing species",
-            "blast_html"             : args.html+"_2.html",
-            "blast_csv"              : args.html+"_2.csv",
-        }
+    "results":[]          
 }
+
 
 #
 # bogus "hello world" data
@@ -83,6 +90,8 @@ print("FASTA files found: ", fasta_files)
 # iterate over fasta files
 for infilename in fasta_files:
     # read in fasta file
+    print("\n\n----------------------------------------------------------------------")
+    print("Processing fasta file: ", infilename)
     fasta_file_path = os.path.join(args.indir, infilename)
     blastasn_output_filepath= os.path.join(args.outdir, infilename + ".asn")
     blastcsv_output_filepath= os.path.join(args.outdir, infilename + ".csv")
@@ -95,7 +104,6 @@ for infilename in fasta_files:
     blasthtml_cmd = ["blast_formatter", "-archive", blastasn_output_filepath,  "-out", blasthtml_output_filepath, "-html" ]
     print("ASN Format Command:", " ".join(blastasn_cmd), "\n", "CSV Format Command:", " ".join(blastcsv_cmd), "\n", "HTML Format Command:", " ".join(blasthtml_cmd))
 
-
     db_output_asn = subprocess.run(blastasn_cmd, capture_output=True, text=True)
     print("Blast .asn output files:", blastasn_output_filepath)
     db_output_csv = subprocess.run(blastcsv_cmd, capture_output=True, text=True)
@@ -103,67 +111,67 @@ for infilename in fasta_files:
     db_output_html = subprocess.run(blasthtml_cmd, capture_output=True, text=True)
     print("Blast .html output files:", blasthtml_output_filepath)
 
-    #reading html and csv files to append in out_dict
-    with open(blastcsv_output_filepath, 'r') as f:
-        csv_data = f.read()
-        # parse csv data
-        print("CSV data: ", csv_data)
-        # append to out_dict
-        out_dict["csv_dict"]["blast_csv"] = blastcsv_output_filepath
-        out_dict["csv_dict"]["input_file"] = infilename
+   
+    # read in csv file and set headers to extract data
+    for file in [blastcsv_output_filepath]:
+         try:
+            raw_data = pd.read_csv(file)
+        # Process the file only if it's successfully read
+            #df is df for the blast csv file
+            #df2 is df for the processed_accessions_b.tsv file
+            df = pd.read_csv(file, header=None, names=["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"])
+            print( "Loading output file", file)
+            print( "Number of rows in blast csv file: ", len(df))
+            if args.verbose: print(df)
+            df2= pd.read_csv("processed_accessions_b.tsv", sep="\t", header=0)
+            print("Number of rows in processed_accessions_b.tsv file: ", len(df2))
+            #initializes the sBaseAccession column in df that is used for joining
+            df["sBaseAccession"]= df["sseqid"].astype(str).str.replace(r'\.\d+.*$','',regex=True)
+            #merging the two dataframes by the sBaseAccession column and the Accession column
+            merge_dfs= pd.merge(df,df2, left_on="sBaseAccession", right_on= "Accession", how="left")
+            if args.verbose: print(merge_dfs)
+
+            #iterate over the merged dataframe to extract the data to hit dict
+            for index, row in merge_dfs.iterrows():
                 
-        #         out_dict["csv_dict"]["classification_rank"]= [(row.split(",")[1])]
-        # print(out_dict)
+            
+                hit= {}           # append to hit
+                hit["blast_csv"] = blastcsv_output_filepath
+                hit["input_file"] = infilename
+                hit["input_seq"] = infilename.split(".")[0]
+                hit["evalue"]= row["evalue"]
+                hit["bitscore"]= row["bitscore"]
+                hit["qseqid"]= row["qseqid"]
+                hit["sseqid"]= row["sseqid"]
+                hit["blast_html"] = blasthtml_output_filepath
+                hit["status"] = "HITS"
+                #establishing dict in hit dict
+                hit["sseqid_lineage"]= {}
+                hit["sseqid_lineage"]["genus"]= row["Genus"]
+                hit["sseqid_lineage"]["species"]= row["Species"]
+                #splitting the sseqid row into two parts
+                if row["sseqid"]:
+                    delimiter = r"[#,]"
+                    hit["sseqid_accession"]= re.split(delimiter, row["sseqid"])[0]
+            
+                #splitting the qseqid row into two parts to just show the qseqid without everything after the first #
+                delimiter= r"[#]"
+                hit["qseqid"]= re.split(delimiter, hit["qseqid"])[0]
+                json_hits["results"].append(hit)
+                
+         except pd.errors.EmptyDataError:
+            print(file, "is empty and has been skipped.", "status: NO_HITS")
 
 
+        
 
 
-    # if db_output_asn.returncode == 0:
-    #     blastasn_output_filepath == os.path.join(args.outdir, infilename + ".csv")
-    # if blastasn_output_filepath == os.path.join(args.outdir, infilename + ".csv"):
-    #     blastasn_output_filepath = os.path.join(args.outdir, infilename + ".html")
-
-
-
+            
+            
+            
     
-
     
-
-    
-
-    
-
-
-
-    
-    
-   
-    
-     
-
-    
-
-
-   
-
-
-
-    #files are to be html, csv, asn
-    #blast runs first to creat asn then coverts to html and csv
-
-
-    
-
-
-
-
-
-
-
-
-
-
-
+            
 
 
 #    """  print("Reading fasta file: ", fasta_file_path)
@@ -177,57 +185,6 @@ for infilename in fasta_files:
 #             print("Header: ", header)
 #             print("Sequence: ", sequence) """
 
-
-
-
-
-
-
-
-html_hello_world_pre = """<HTML>
-<HEADER><TITLE>hello world HTML"""
-
-html_hello_world_mid = """</TITLE></HEADER>
-<BODY>
-<H>Hello</H>
-<I>world"""
-
-html_hello_world_post = """</I>
-</BODY>
-</HTML>"""
-
-def concatenate_html(str_val):
-    
-    return html_hello_world_pre + str_val + html_hello_world_mid + str_val + html_hello_world_post
-
-
-csv_results_txt = """# BLASTN 2.16.0+
-# Query: AY954969.1#Kayvirus_G1 AY954969.1 Staphylococcus phage G1, complete genome
-# Database: ./blast/ICTV_VMR_b
-# Fields: query acc.ver, subject acc.ver, % identity, alignment length, mismatches, gap opens, q. start, q. end, s. start, s. end, evalue, bit score
-# 7 hits found
-AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,100.000,138715,0,0,1,138715,1,138715,0.0,2.562e+05
-AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,95.783,498,12,9,135784,136276,135594,136087,0.0,795
-AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,95.783,498,12,9,135594,136087,135784,136276,0.0,795
-AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,92.208,308,15,9,135974,136276,135594,135897,4.96e-118,427
-AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,92.208,308,15,9,135594,135897,135974,136276,4.96e-118,427
-AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,82.203,118,12,9,136164,136276,135594,135707,2.06e-17,93.5
-AY954969.1#Kayvirus_G1,AY954969.1#Kayvirus_G1,82.203,118,12,9,135594,135707,136164,136276,2.06e-17,93.5
-# BLAST processed 1 queries
-"""
-
-#
-# read in better bogus hello world data from filesys
-#
-hello_world_data_csv_filename="hello_world_data/AY954969.csv"
-hello_world_data_html_filename="hello_world_data/AY954969.html"
-
-with open(hello_world_data_csv_filename, 'r') as f:
-    hello_world_data_csv = f.read()
-
-with open(hello_world_data_html_filename, 'r') as f:
-    hello_world_data_html = f.read()
-
 #
 # write output/results
 #
@@ -235,42 +192,10 @@ with open(hello_world_data_html_filename, 'r') as f:
 # Ensure the output directory exists
 os.makedirs(args.outdir, exist_ok=True)
 
-# seq 1 blast html output
-html_1_outpath=os.path.join(args.outdir, args.html+'_1.html')
-with open(html_1_outpath, "w") as outfile:
-    #outfile.write(concatenate_html("1"))
-    outfile.write(hello_world_data_html)
-print("Wrote: ", html_1_outpath)
-outfile.close()
-
-# seq 2 blast html output
-html_2_outpath=os.path.join(args.outdir, args.html+'_2.html')
-with open(html_2_outpath, "w") as outfile:
-    #outfile.write(concatenate_html("2"))
-    outfile.write(hello_world_data_html)
-print("Wrote: ", html_2_outpath)
-outfile.close()
-
-# seq 1 blast CSV output
-csv_1_outpath=os.path.join(args.outdir, args.html+'_1.csv')
-with open(csv_1_outpath, "w") as outfile:
-    #outfile.write(csv_results_txt)
-    outfile.write(hello_world_data_csv)
-print("Wrote: ", csv_1_outpath)
-outfile.close()
-
-# seq 2 blast CSV output
-csv_2_outpath=os.path.join(args.outdir, args.html+'_2.csv')
-with open(csv_2_outpath, "w") as outfile:
-    outfile.write(csv_results_txt)
-    outfile.write(hello_world_data_csv)
-print("Wrote: ", csv_2_outpath)
-outfile.close()
-
 # json job output/summary
 json_outpath=os.path.join(args.outdir, args.json)
 with open(json_outpath, "w") as outfile:
-    json.dump(obj=out_dict, fp=outfile, indent=4)
+    json.dump(obj=json_hits, fp=outfile, indent=4)
 print("Wrote: ", json_outpath)
 outfile.close()
 
