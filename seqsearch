@@ -12,7 +12,7 @@ import os
 import sys
 import subprocess
 import glob
-import numpy
+import numpy as np
 #
 # parse ARGS
 #
@@ -149,6 +149,9 @@ for infilename in fasta_files:
                 hit["sseqid_lineage"]= {}
                 hit["sseqid_lineage"]["genus"]= row["Genus"]
                 hit["sseqid_lineage"]["species"]= row["Species"]
+                hit["segmentname"]= row["Segment_Name"]
+                if isinstance(row["Segment_Name"], float) and np.isnan(row["Segment_Name"]):
+                    hit["segmentname"] = "No segment name"
                 #splitting the sseqid row into two parts
                 if row["sseqid"]:
                     delimiter = r"[#,]"
