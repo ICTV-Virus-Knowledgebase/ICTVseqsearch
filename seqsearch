@@ -126,7 +126,8 @@ for infilename in fasta_files:
             df2= pd.read_csv("processed_accessions_b.tsv", sep="\t", header=0)
             print("Number of rows in processed_accessions_b.tsv file: ", len(df2))
             #initializes the sBaseAccession column in df that is used for joining
-            df["sBaseAccession"]= df["sseqid"].astype(str).str.replace(r'\.\d+.*$','',regex=True)
+            df["sBaseAccession"]= df["sseqid"].astype(str).str.replace(r'^.*-(\w[^.]*)\..*$', r'\1',regex=True)
+            print(df["sBaseAccession"])
             #merging the two dataframes by the sBaseAccession column and the Accession column
             merge_dfs= pd.merge(df,df2, left_on="sBaseAccession", right_on= "Accession", how="left")
             if args.verbose: print(merge_dfs)
@@ -161,6 +162,27 @@ for infilename in fasta_files:
                 hit["sseqid_lineage"]["genus"]= row["Genus"]
                 hit["sseqid_lineage"]["species"]= row["Species"]
                 hit["segmentname"]= row["Segment_Name"]
+                hit["sseqid_lineage"]["realm"]= row["Realm"]
+                hit["sseqid_lineage"]["family"]= row["Family"]
+                hit["sseqid_lineage"]["subfamily"]= row["Subfamily"]
+                hit["sseqid_lineage"]["phylum"]= row["Phylum"]
+                hit["sseqid_lineage"]["class"]= row["Class"]
+                hit["sseqid_lineage"]["order"]= row["Order"]
+
+                if isinstance(hit["sseqid_lineage"]["realm"], float) and np.isnan(hit["sseqid_lineage"]["realm"]):
+                    hit["sseqid_lineage"]["realm"] = "No realm"
+                if isinstance(hit["sseqid_lineage"]["family"], float) and np.isnan(hit["sseqid_lineage"]["family"]):
+                    hit["sseqid_lineage"]["family"] = "No family"
+                if isinstance(hit["sseqid_lineage"]["subfamily"], float) and np.isnan(hit["sseqid_lineage"]["subfamily"]):
+                    hit["sseqid_lineage"]["subfamily"] = "No subfamily"
+                if isinstance(hit["sseqid_lineage"]["phylum"], float) and np.isnan(hit["sseqid_lineage"]["phylum"]):
+                    hit["sseqid_lineage"]["phylum"] = "No phylum"
+                if isinstance(hit["sseqid_lineage"]["class"], float) and np.isnan(hit["sseqid_lineage"]["class"]):
+                    hit["sseqid_lineage"]["class"] = "No class"
+                if isinstance(hit["sseqid_lineage"]["order"], float) and np.isnan(hit["sseqid_lineage"]["order"]):
+                    hit["sseqid_lineage"]["order"] = "No order"
+
+                #Turns empty NaN values in the Segment_Name column into "No segment name"
                 if isinstance(row["Segment_Name"], float) and np.isnan(row["Segment_Name"]):
                     hit["segmentname"] = "No segment name"
                 #splitting the sseqid row into two parts
