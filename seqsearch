@@ -71,6 +71,24 @@ json_hits = {
     "results":[]          
 }
 
+rankmap = {
+    "Realm": "realm",
+    "Family": "family",
+    "Subfamily": "subfamily",
+    "Phylum": "phylum",
+    "Class": "class",
+    "Order": "order",
+    "Genus": "genus",
+    "Species": "species",
+    "Kingdom": "kingdom",
+    "Subkingdom": "subkingdom",
+    "Subphylum": "subphylum",
+    "Subrealm": "subrealm",
+    "Subclass": "subclass",
+    "Suborder": "suborder",
+    "Subgenus": "subgenus",
+}
+
 
 #
 # bogus "hello world" data
@@ -159,32 +177,17 @@ for infilename in fasta_files:
                 hit["status"] = "HITS"
                 #establishing dict in hit dict
                 hit["sseqid_lineage"]= {}
-                hit["sseqid_lineage"]["genus"]= row["Genus"]
-                hit["sseqid_lineage"]["species"]= row["Species"]
-                hit["segmentname"]= row["Segment_Name"]
-                hit["sseqid_lineage"]["realm"]= row["Realm"]
-                hit["sseqid_lineage"]["family"]= row["Family"]
-                hit["sseqid_lineage"]["subfamily"]= row["Subfamily"]
-                hit["sseqid_lineage"]["phylum"]= row["Phylum"]
-                hit["sseqid_lineage"]["class"]= row["Class"]
-                hit["sseqid_lineage"]["order"]= row["Order"]
+                for src_key, target_key in rankmap.items():
+                    hit["sseqid_lineage"][target_key] = row[src_key]
 
-                if isinstance(hit["sseqid_lineage"]["realm"], float) and np.isnan(hit["sseqid_lineage"]["realm"]):
-                    hit["sseqid_lineage"]["realm"] = "No realm"
-                if isinstance(hit["sseqid_lineage"]["family"], float) and np.isnan(hit["sseqid_lineage"]["family"]):
-                    hit["sseqid_lineage"]["family"] = "No family"
-                if isinstance(hit["sseqid_lineage"]["subfamily"], float) and np.isnan(hit["sseqid_lineage"]["subfamily"]):
-                    hit["sseqid_lineage"]["subfamily"] = "No subfamily"
-                if isinstance(hit["sseqid_lineage"]["phylum"], float) and np.isnan(hit["sseqid_lineage"]["phylum"]):
-                    hit["sseqid_lineage"]["phylum"] = "No phylum"
-                if isinstance(hit["sseqid_lineage"]["class"], float) and np.isnan(hit["sseqid_lineage"]["class"]):
-                    hit["sseqid_lineage"]["class"] = "No class"
-                if isinstance(hit["sseqid_lineage"]["order"], float) and np.isnan(hit["sseqid_lineage"]["order"]):
-                    hit["sseqid_lineage"]["order"] = "No order"
+                    if isinstance(hit["sseqid_lineage"][target_key], float) and np.isnan(hit["sseqid_lineage"].get(target_key)):
+                        hit["sseqid_lineage"][target_key] = None
+
+                
 
                 #Turns empty NaN values in the Segment_Name column into "No segment name"
                 if isinstance(row["Segment_Name"], float) and np.isnan(row["Segment_Name"]):
-                    hit["segmentname"] = "No segment name"
+                    hit["segmentname"] = None
                 #splitting the sseqid row into two parts
                 if row["sseqid"]:
                     delimiter = r"[#,]"
