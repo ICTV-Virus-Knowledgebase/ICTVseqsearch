@@ -105,6 +105,10 @@ for  infilename in os.listdir(args.indir):
             fasta_files.append (infilename)
 print("FASTA files found: ", fasta_files)
 
+ #parsed_data_df is df for the processed_accessions_b.tsv file
+parsed_data_df= pd.read_csv("processed_accessions_b.tsv", sep="\t", header=0)
+
+
 # iterate over fasta files
 for infilename in fasta_files:
     # read in fasta file
@@ -129,77 +133,84 @@ for infilename in fasta_files:
     db_output_html = subprocess.run(blasthtml_cmd, capture_output=True, text=True)
     print("Blast .html output files:", blasthtml_output_filepath)
 
-   
+    
     # read in csv file and set headers to extract data
-    for file in [blastcsv_output_filepath]:
-         try:
-            raw_data = pd.read_csv(file)
-            # Process the file only if it's successfully read
-            #df is df for the blast csv file
-            #df2 is df for the processed_accessions_b.tsv file
-            df = pd.read_csv(file, header=None, names=["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"])
-            print( "Loading output file", file)
-            print( "Number of rows in blast csv file: ", len(df))
-            if args.verbose: print(df)
-            df2= pd.read_csv("processed_accessions_b.tsv", sep="\t", header=0)
-            print("Number of rows in processed_accessions_b.tsv file: ", len(df2))
-            #initializes the sBaseAccession column in df that is used for joining
-            df["sBaseAccession"]= df["sseqid"].astype(str).str.replace(r'^.*-(\w[^.]*)\..*$', r'\1',regex=True)
-            print(df["sBaseAccession"])
-            #merging the two dataframes by the sBaseAccession column and the Accession column
-            merge_dfs= pd.merge(df,df2, left_on="sBaseAccession", right_on= "Accession", how="left")
-            if args.verbose: print(merge_dfs)
+    
+    try:
+        raw_data = pd.read_csv(blastcsv_output_filepath)
+        # Process the file only if it's successfully read
+        #df is df for the blast csv file
+        
+        df = pd.read_csv(blastcsv_output_filepath, header=None, names=["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"])
+        print( "Loading output file", blastcsv_output_filepath)
+        print( "Number of rows in blast csv file: ", len(df))
+        if args.verbose: print(df)
+        
+        print("Number of rows in processed_accessions_b.tsv file: ", len(parsed_data_df))
+        #initializes the sBaseAccession column in df that is used for joining
+        df["sBaseAccession"]= df["sseqid"].astype(str).str.replace(r'^.*-(\w[^.]*)\..*$', r'\1',regex=True)
+        print(df["sBaseAccession"])
+        #merging the two dataframes by the sBaseAccession column and the Accession column
+        merge_dfs= pd.merge(df,parsed_data_df, left_on="sBaseAccession", right_on= "Accession", how="left")
+        if args.verbose: print(merge_dfs)
 
-            # check if some blast results didn't match to known accessions
-            merge_missing = merge_dfs["Species"].isna().sum()
-            if merge_missing > 0: 
-                print(f"INTERNAL ERROR: {merge_missing} out of {len(df)} sseqid.base_accession's didn't match to processed_accessions table.")
-                print("INTERNAL ERROR: check if your blastdb and processed_accesions table are out of sync.")
+        # check if some blast results didn't match to known accessions
+        merge_missing = merge_dfs["Species"].isna().sum()
+        if merge_missing > 0: 
+            print(f"INTERNAL ERROR: {merge_missing} out of {len(df)} sseqid.base_accession's didn't match to processed_accessions table.")
+            print("INTERNAL ERROR: check if your blastdb and processed_accesions table are out of sync.")
 
-            if len(df) < len(merge_dfs):
-                print("INTERNAL ERROR: merging blast results to processed_accessions added extra rows.")
-                print("INTERNAL ERROR: check if your blastdb and processed_accesions table are out of sync.")
-                sys.exit(1)
-                      
-            #iterate over the merged dataframe to extract the data to hit dict
-            for index, row in merge_dfs.iterrows():
-                
+        if len(df) < len(merge_dfs):
+            print("INTERNAL ERROR: merging blast results to processed_accessions added extra rows.")
+            print("INTERNAL ERROR: check if your blastdb and processed_accesions table are out of sync.")
+            sys.exit(1)
+
+    
+                    
+        #iterate over the merged dataframe to extract the data to hit dict
+        for index, row in merge_dfs.iterrows():
             
-                hit= {}           # append to hit
-                hit["blast_csv"] = blastcsv_output_filepath
-                hit["input_file"] = infilename
-                hit["input_seq"] = infilename.split(".")[0]
-                hit["evalue"]= row["evalue"]
-                hit["bitscore"]= row["bitscore"]
-                hit["qseqid"]= row["qseqid"]
-                hit["sseqid"]= row["sseqid"]
-                hit["blast_html"] = blasthtml_output_filepath
-                hit["status"] = "HITS"
-                #establishing dict in hit dict
-                hit["sseqid_lineage"]= {}
-                for src_key, target_key in rankmap.items():
-                    hit["sseqid_lineage"][target_key] = row[src_key]
+        
+            hit= {}           # append to hit
+            hit["blast_csv"] = blastcsv_output_filepath
+            hit["input_file"] = infilename
+            hit["input_seq"] = infilename.split(".")[0]
+            hit["evalue"]= row["evalue"]
+            hit["bitscore"]= row["bitscore"]
+            hit["qseqid"]= row["qseqid"]
+            hit["sseqid"]= row["sseqid"]
+            hit["blast_html"] = blasthtml_output_filepath
+            hit["status"] = "HITS"
+            #establishing dict in hit dict
+            hit["sseqid_lineage"]= {}
+            for src_key, target_key in rankmap.items():
+                hit["sseqid_lineage"][target_key] = row[src_key]
 
-                    if isinstance(hit["sseqid_lineage"][target_key], float) and np.isnan(hit["sseqid_lineage"].get(target_key)):
-                        hit["sseqid_lineage"][target_key] = None
+                if isinstance(hit["sseqid_lineage"][target_key], float) and np.isnan(hit["sseqid_lineage"].get(target_key)):
+                    hit["sseqid_lineage"][target_key] = None
 
-                
-
-                #Turns empty NaN values in the Segment_Name column into "No segment name"
-                if isinstance(row["Segment_Name"], float) and np.isnan(row["Segment_Name"]):
-                    hit["segmentname"] = None
-                #splitting the sseqid row into two parts
-                if row["sseqid"]:
-                    delimiter = r"[#,]"
-                    hit["sseqid_accession"]= re.split(delimiter, row["sseqid"])[0]
             
-                #splitting the qseqid row into two parts to just show the qseqid without everything after the first #
-                delimiter= r"[#]"
-                hit["qseqid"]= re.split(delimiter, hit["qseqid"])[0]
-                json_hits["results"].append(hit)
-                
-         except pd.errors.EmptyDataError:
-            print(file, "is empty and has been skipped.", "status: NO_HITS")
+
+            #Turns empty NaN values in the Segment_Name column into "No segment name"
+            if isinstance(row["Segment_Name"], float) and np.isnan(row["Segment_Name"]):
+                hit["segmentname"] = None
+            #splitting the sseqid row into two parts
+            if row["sseqid"]:
+                delimiter = r"[#,]"
+                hit["sseqid_accession"]= re.split(delimiter, row["sseqid"])[0]
+
+            
+            
+            
+
+        
+            #splitting the qseqid row into two parts to just show the qseqid without everything after the first #
+            delimiter= r"[#]"
+            hit["qseqid"]= re.split(delimiter, hit["qseqid"])[0]
+            json_hits["results"].append(hit)
+            
+    except pd.errors.EmptyDataError:
+        print(blastcsv_output_filepath, "is empty and has been skipped.", "status: NO_HITS")
 
 
         
