@@ -196,8 +196,7 @@ for infilename in fasta_files:
                 hit["segmentname"] = None
             #splitting the sseqid row into two parts
             if row["sseqid"]:
-                delimiter = r"[#,]"
-                hit["sseqid_accession"]= re.split(delimiter, row["sseqid"])[0]
+                hit["sseqid_accession"] = row["sseqid"].replace(row["sseqid"].rsplit("-", 1)[0] + "-", "")
 
             
             
