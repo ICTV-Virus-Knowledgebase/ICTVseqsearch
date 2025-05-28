@@ -71,6 +71,8 @@ json_hits = {
     "results":[]          
 }
 
+tsv_hits = None
+
 rankmap = {
     "Realm": "realm",
     "Family": "family",
@@ -210,6 +212,16 @@ for infilename in fasta_files:
             
     except pd.errors.EmptyDataError:
         print(blastcsv_output_filepath, "is empty and has been skipped.", "status: NO_HITS")
+
+    if tsv_hits is None:
+        tsv_hits = merge_dfs
+    else:
+        tsv_hits = pd.concat([tsv_hits, merge_dfs], ignore_index=True)
+    # write tsv file
+    tsv_hits.to_csv(os.path.join(args.outdir, "blast_results.tsv"), sep="\t", index=False)
+
+
+
 
 
         
