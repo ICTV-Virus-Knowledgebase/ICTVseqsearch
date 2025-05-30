@@ -92,9 +92,7 @@ rankmap = {
 }
 
 
-#
-# bogus "hello world" data
-#
+GroupedHits = {}
 
 
 # for eden: get list of fasta files in input directory (.fa/.fna.fasta) 
@@ -143,6 +141,7 @@ for infilename in fasta_files:
         # Process the file only if it's successfully read
         #df is df for the blast csv file
         
+
         df = pd.read_csv(blastcsv_output_filepath, header=None, names=["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"])
         print( "Loading output file", blastcsv_output_filepath)
         print( "Number of rows in blast csv file: ", len(df))
@@ -167,6 +166,7 @@ for infilename in fasta_files:
             print("INTERNAL ERROR: check if your blastdb and processed_accesions table are out of sync.")
             sys.exit(1)
 
+        json_hits["results"]= list(GroupedHits.values())
     
                     
         #iterate over the merged dataframe to extract the data to hit dict
@@ -200,25 +200,35 @@ for infilename in fasta_files:
             if row["sseqid"]:
                 hit["sseqid_accession"] = row["sseqid"].replace(row["sseqid"].rsplit("-", 1)[0] + "-", "")
 
-            
-            
-            
+           
 
-        
             #splitting the qseqid row into two parts to just show the qseqid without everything after the first #
             delimiter= r"[#]"
             hit["qseqid"]= re.split(delimiter, hit["qseqid"])[0]
-            json_hits["results"].append(hit)
+
+            if blastcsv_output_filepath not in GroupedHits:
+                GroupedHits[blastcsv_output_filepath] = {
+                    "input_file": infilename,
+                    "blast_csv": blastcsv_output_filepath,
+                    "blast_html": blasthtml_output_filepath,
+
+                    "hits": []
+                }
+            print(GroupedHits[blastcsv_output_filepath]["hits"])
+
+
+
+            GroupedHits[blastcsv_output_filepath]["hits"].append(hit)
+            
             
     except pd.errors.EmptyDataError:
         print(blastcsv_output_filepath, "is empty and has been skipped.", "status: NO_HITS")
 
-    if tsv_hits is None:
-        tsv_hits = merge_dfs
-    else:
-        tsv_hits = pd.concat([tsv_hits, merge_dfs], ignore_index=True)
-    # write tsv file
-    tsv_hits.to_csv(os.path.join(args.outdir, "blast_results.tsv"), sep="\t", index=False)
+
+    # tsv_hits = merge_dfs
+    # tsv_hits = pd.concat([tsv_hits, merge_dfs], ignore_index=True)
+    # # write tsv file
+    # tsv_hits.to_csv(os.path.join(args.outdir, "blast_results.tsv"), sep="\t", index=False)
 
 
 
