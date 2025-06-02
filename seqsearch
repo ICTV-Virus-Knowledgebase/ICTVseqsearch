@@ -66,7 +66,6 @@ json_hits = {
     "version"  : git_version,
     "database_name": args.blastdb,
     "database_title": "",
-    "errors": "",
     "input_dir": args.indir,
     "results":[]          
 }
@@ -186,6 +185,7 @@ for infilename in fasta_files:
             hit["sseqid"]= row["sseqid"]
             hit["blast_html"] = blasthtml_output_filepath
             hit["status"] = "HITS"
+            hit["errors"] = ""
             #establishing dict in hit dict
             hit["sseqid_lineage"]= {}
             for src_key, target_key in rankmap.items():
@@ -199,6 +199,8 @@ for infilename in fasta_files:
             #Turns empty NaN values in the Segment_Name column into "No segment name"
             if isinstance(row["Segment_Name"], float) and np.isnan(row["Segment_Name"]):
                 hit["segmentname"] = None
+            else:
+                hit["segmentname"] = row["Segment_Name"]
             #splitting the sseqid row into two parts
             if row["sseqid"]:
                 hit["sseqid_accession"] = row["sseqid"].replace(row["sseqid"].rsplit("-", 1)[0] + "-", "")
@@ -214,6 +216,7 @@ for infilename in fasta_files:
                     "input_file": infilename,
                     "blast_csv": blastcsv_output_filepath,
                     "blast_html": blasthtml_output_filepath,
+                
 
                     "hits": []
                 }
