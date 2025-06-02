@@ -95,6 +95,8 @@ rankmap = {
 GroupedHits = {}
 
 
+
+
 # for eden: get list of fasta files in input directory (.fa/.fna.fasta) 
 if args.verbose:
     print("Files in input directory: ", os.listdir(args.indir))
@@ -115,6 +117,7 @@ for infilename in fasta_files:
     print("\n\n----------------------------------------------------------------------")
     print("Processing fasta file: ", infilename)
     fasta_file_path = os.path.join(args.indir, infilename)
+    #create output file paths
     blastasn_output_filepath= os.path.join(args.outdir, infilename + ".asn")
     blastcsv_output_filepath= os.path.join(args.outdir, infilename + ".csv")
     blasthtml_output_filepath= os.path.join(args.outdir, infilename + ".html")
@@ -214,11 +217,28 @@ for infilename in fasta_files:
 
                     "hits": []
                 }
-            print(GroupedHits[blastcsv_output_filepath]["hits"])
-
-
-
             GroupedHits[blastcsv_output_filepath]["hits"].append(hit)
+            json_hits["results"]= list(GroupedHits.values())
+
+
+
+            if GroupedHits:
+                # write tsv file    
+                    pd.DataFrame(GroupedHits[blastcsv_output_filepath]["hits"]).to_csv(
+                    os.path.join(args.outdir, f"{os.path.basename(blastcsv_output_filepath)}_hits.tsv")
+                )
+                    print("Wrote tsv file: ", os.path.join(args.outdir, blastcsv_output_filepath + "_hits.tsv"))
+
+
+           
+        
+                    
+                    
+            # print(GroupedHits[blastcsv_output_filepath]["hits"])
+
+
+
+            
             
             
     except pd.errors.EmptyDataError:
