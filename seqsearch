@@ -182,7 +182,7 @@ for infilename in fasta_files:
             hit["bitscore"]= row["bitscore"]
             hit["qseqid"]= row["qseqid"]
             hit["sseqid"]= row["sseqid"]
-            hit["status"] = "HITS"
+    
             #establishing dict in hit dict
             hit["sseqid_lineage"]= {}
             for src_key, target_key in rankmap.items():
