@@ -67,6 +67,7 @@ json_hits = {
     "database_name": args.blastdb,
     "database_title": "",
     "input_dir": args.indir,
+    "errors": "",
     "results":[]          
 }
 
@@ -176,16 +177,12 @@ for infilename in fasta_files:
             
         
             hit= {}           # append to hit
-            hit["blast_csv"] = blastcsv_output_filepath
-            hit["input_file"] = infilename
             hit["input_seq"] = infilename.split(".")[0]
             hit["evalue"]= row["evalue"]
             hit["bitscore"]= row["bitscore"]
             hit["qseqid"]= row["qseqid"]
             hit["sseqid"]= row["sseqid"]
-            hit["blast_html"] = blasthtml_output_filepath
             hit["status"] = "HITS"
-            hit["errors"] = ""
             #establishing dict in hit dict
             hit["sseqid_lineage"]= {}
             for src_key, target_key in rankmap.items():
@@ -216,6 +213,8 @@ for infilename in fasta_files:
                     "input_file": infilename,
                     "blast_csv": blastcsv_output_filepath,
                     "blast_html": blasthtml_output_filepath,
+                    "status": "HITS",
+                    "errors": "",
                 
 
                     "hits": []
