@@ -54,6 +54,8 @@ if first_4_lines:
     #Removes any tabs in the first 4 lines and replaces them with a single space
     remove_tabs = re.sub(r'\t+', ' ', first_4_lines)
     first_4_lines = remove_tabs.strip()
+    remove_words= first_4_lines[9:]  # remove the first 9 characters "Database: "
+    first_4_lines = remove_words.strip()
 
 
 
