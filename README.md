@@ -41,6 +41,7 @@ conda activate conda/vmr_openpyxl3
 ./makedatabase.sh
 
 # search test sequences
+./version_git.sh
 ./seqsearch -in test_data/one_seq -out test_out/one_seq
 
 # compare results to expected
