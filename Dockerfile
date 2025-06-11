@@ -55,6 +55,7 @@ COPY version_git.txt .
 #
 #RUN mkdir -p ./blast
 COPY blast/ ./blast/
+COPY blast_test/ ./blast_test/
 #COPY pull_blast_from_cheaha.sh .
 #RUN ./pull_blast_from_cheaha.sh
 #!/usr/bin/env bash
@@ -65,10 +66,11 @@ COPY processed_accessions_b.tsv ./
 #COPY fixed_vmr_a.tsv ./
 #COPY fixed_vmr_e.tsv ./
 
-#
-# copy in hard-coded result data (prototype only)
 # 
-COPY hello_world_data/ ./hello_world_data/
+# test data
+#
+COPY test_data/one_seq/ ./test_data/one_seq/
+COPY test_out/one_seq/ ./test_out/one_seq/
 
 # what does ENTRYPOINT do exactly?
 # ENTRYPOINT fixed the base command; immutable
