@@ -23,6 +23,9 @@ parser.add_argument('-outdir',help="output directory for tax_results.json",defau
 parser.add_argument('-json',help="output json filename",default="tax_results.json")
 parser.add_argument('-html',help="output  html base filename",default="tax_results")
 parser.add_argument('-blastdb',help="input blast base filename",default="./blast/ICTV_VMR_b")
+parser.add_argument('-db', help="BLAST database file", default="blast/ICTV_VMR_b")
+parser.add_argument('-info', action='store_true', help="Display BLAST database info")
+
 args = parser.parse_args()
 
 print("Hello World")
@@ -38,34 +41,31 @@ with open("version_git.txt") as verfile:
     git_version = verfile.readline().strip()
 print("VERSION:", git_version )
 
+#System command to get blast db info "blastdbcmd -db blast/ICTV_VMR_b -info"
+db_title_command = ["blastdbcmd", "-db", args.db, "-info"]
+db_title_output = subprocess.run(db_title_command, capture_output=True, text=True, check=True)
+
+#Split the output into lines and take the first 4 lines with splicing
+db_title_len= db_title_output.stdout.splitlines()
+first_4_lines = db_title_len[:4]
+# Joins the first 4 lines by the tab characters
+if first_4_lines:
+    first_4_lines= "\t".join(first_4_lines)
+    #Removes any tabs in the first 4 lines and replaces them with a single space
+    remove_tabs = re.sub(r'\t+', ' ', first_4_lines)
+    first_4_lines = remove_tabs.strip()
+    remove_words= first_4_lines[9:]  # remove the first 9 characters "Database: "
+    first_4_lines = remove_words.strip()
 
 
-# "input_file"             : "test12.fa",
-        #     "input_seq"              : "test_seq_1",
-        #     "status"                 : "CLASSIFIED",
-        #     "classification_rank"    : "species",
-        #     "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"WorldGenus", "species":"WorldGenus specius"},
-        #     "blast_html"             : args.html+"_1.html",
-        #     "blast_csv"              : args.html+"_1.csv",
-        # }
-        # ,
-        # "html_dict": {
-        #     "input_file"             : "test12.fa",
-        #     "input_seq"              : "test_seq_2",
-        #     "status"                 : "CLASSIFIED",
-        #     "classification_rank"    : "genus",
-        #     "classification_lineage" : {"realm":"HelloRealm", "family":"BigFamily", "genus":"CountryGenus"},
-        #     "message"                : "Homologous to species within the genus, but not close enough to classify within an existing species",
-        #     "blast_html"             : args.html+"_2.html",
-        #     "blast_csv"              : args.html+"_2.csv",
-        # } 
-# hello world data dictionary
-#
+
+
+
 json_hits = {
     "program_name": os.path.basename(sys.argv[0]),
     "version"  : git_version,
     "database_name": args.blastdb,
-    "database_title": "",
+    "database_title": first_4_lines,
     "input_dir": args.indir,
     "errors": "",
     "results":[]          

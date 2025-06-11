@@ -2,16 +2,16 @@
     "program_name": "seqsearch",
     "version": "v0.3.c786cad",
     "database_name": "./blast/ICTV_VMR_b",
-    "database_title": "",
-    "errors": "",
+    "database_title": "Database: ICTV VMR_MSL40.v1.20250307 (all) 27 sequences; 6,868,513 total bases Date: May 14, 2025  2:12 PM Longest sequence: 4,857,450 bases",
     "input_dir": "test_data/one_seq",
+    "errors": "",
     "results": [
         {
             "input_file": "HM119428.fa",
-            "errors": "",
-            "status": "HITS",
             "blast_csv": "test_out/one_seq/HM119428.fa.csv",
             "blast_html": "test_out/one_seq/HM119428.fa.html",
+            "status": "HITS",
+            "errors": "",
             "hits": [
                 {
                     "input_seq": "HM119428",
@@ -43,10 +43,10 @@
         },
         {
             "input_file": "KT732817.fa",
-            "errors": "",
-            "status": "HITS",
             "blast_csv": "test_out/one_seq/KT732817.fa.csv",
             "blast_html": "test_out/one_seq/KT732817.fa.html",
+            "status": "HITS",
+            "errors": "",
             "hits": [
                 {
                     "input_seq": "KT732817",
@@ -156,10 +156,10 @@
         },
         {
             "input_file": "PP467602.fa",
-            "errors": "",
-            "status": "HITS",
             "blast_csv": "test_out/one_seq/PP467602.fa.csv",
             "blast_html": "test_out/one_seq/PP467602.fa.html",
+            "status": "HITS",
+            "errors": "",
             "hits": [
                 {
                     "input_seq": "PP467602",

@@ -42,7 +42,7 @@ conda activate conda/vmr_openpyxl3
 
 # search test sequences
 ./version_git.sh
-./seqsearch -in test_data/one_seq -out test_out/one_seq
+./seqsearch -indir test_data/one_seq -out test_out/one_seq
 
 # compare results to expected
 diff -w -u test_out/one_seq/tax_results.json test_out/one_seq/tax_results.json.good |dwdiff -u --color
