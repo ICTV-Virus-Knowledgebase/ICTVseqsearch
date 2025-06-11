@@ -2,7 +2,7 @@
     "program_name": "seqsearch",
     "version": "v0.3.c786cad",
     "database_name": "./blast/ICTV_VMR_b",
-    "database_title": "Database: ICTV VMR_MSL40.v1.20250307 (all) 27 sequences; 6,868,513 total bases Date: May 14, 2025  2:12 PM Longest sequence: 4,857,450 bases",
+    "database_title": "Database: ICTV VMR_MSL40.v1.20250307 (b) 27 sequences; 6,868,513 total bases Date: May 14, 2025  2:12 PM Longest sequence: 4,857,450 bases",
     "input_dir": "test_data/one_seq",
     "errors": "",
     "results": [
