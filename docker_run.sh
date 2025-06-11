@@ -12,6 +12,12 @@ mkdir -p $OUT_DIR
 #echo "find testResultsDocker/$TEST -name '*new*' -o -name '*diff*' -exec rm {} +"
 #find testResultsDocker/$TEST -name '*new*' -o -name '*diff*' -exec rm {} +
 
+echo sudo docker run -it \
+	-v "${TEST_DIR}:/seq_in" \
+	-v "${OUT_DIR}:/tax_out" \
+	ictv_seqsearch \
+	$*
+
 sudo docker run -it \
 	-v "${TEST_DIR}:/seq_in" \
 	-v "${OUT_DIR}:/tax_out" \
