@@ -112,7 +112,7 @@ parsed_data_df= pd.read_csv("processed_accessions_b.tsv", sep="\t", header=0)
 
 
 # iterate over fasta files
-for infilename in fasta_files:
+for infilename in sorted(fasta_files):
     # read in fasta file
     print("\n\n----------------------------------------------------------------------")
     print("Processing fasta file: ", infilename)
