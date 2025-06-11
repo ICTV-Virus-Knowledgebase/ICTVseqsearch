@@ -49,6 +49,7 @@ parser.add_argument("-email",help="email for Entrez to use when fetching Fasta f
 parser.add_argument("-mode",help="what function to do. Options: VMR,fasta,db")
 parser.add_argument("-ea",help="Fetch E or A records (Exemplars or AdditionalIsolates)", default="E")
 parser.add_argument("-VMR_file_name",help="name of the VMR file to load.",default="VMR_E_data.xlsx")
+parser.add_argument("-fasta_dir",help="Directory to store downloaded fasta cache", default="./fasta_new_vmr_b" )
 parser.add_argument("-query",help="Name of the fasta file to query the database")
 args = parser.parse_args()
 if args.mode != 'fasta' and args.mode != "VMR" and args.mode != "db":
@@ -333,14 +334,10 @@ def fetch_fasta(processed_accession_file_name):
     if args.verbose: print("fetch_fasta(",processed_accession_file_name,")")
 
     # make sure the output directory exists
-    fasta_dir = "./fasta_new_vmr"
-    if args.ea != "e": 
-        fasta_dir = fasta_dir+"_"+args.ea.lower()
-
-    if not os.path.exists(fasta_dir):
+    if not os.path.exists(args.fasta_dir):
         # Create the directory if it doesn't exist
-        os.makedirs(fasta_dir)
-        if args.verbose: print(f"Directory '{fasta_dir}' created successfully.")
+        os.makedirs(args.fasta_dir)
+        if args.verbose: print(f"Directory '{args.fasta_dir}' created successfully.")
 
     bad_accessions_fname="./bad_accessions_"+args.ea.lower()+".tsv"
     processed_accessions_fanames_fname=processed_accession_file_name.replace(".tsv","")+".fa_names.tsv"
@@ -384,9 +381,9 @@ def fetch_fasta(processed_accession_file_name):
             if family_name != family_name: family_name = ""
                 
             # fasta_file_name
-            genus_dir = fasta_dir+"/"+str(genus_name)
+            genus_dir = args.fasta_dir+"/"+str(genus_name)
             if genus_name == "":
-                genus_dir = fasta_dir+"/"+"no_genus"
+                genus_dir = args.fasta_dir+"/"+"no_genus"
             accession_raw_file_name = genus_dir+"/"+str(accession_ID)+".raw"
             accession_fa_file_name = genus_dir+"/"+str(accession_ID)+".fa"
             
