@@ -108,7 +108,7 @@ for  infilename in os.listdir(args.indir):
 print("FASTA files found: ", fasta_files)
 
  #parsed_data_df is df for the processed_accessions_b.tsv file
-parsed_data_df= pd.read_csv("processed_accessions_b.tsv", sep="\t", header=0)
+parsed_data_df= pd.read_csv("processed_accessions_b.fa_names.tsv", sep="\t", header=0)
 
 
 # iterate over fasta files
@@ -182,6 +182,22 @@ for infilename in sorted(fasta_files):
             hit["bitscore"]= row["bitscore"]
             hit["qseqid"]= row["qseqid"]
             hit["sseqid"]= row["sseqid"]
+            hit["ICTV_ID"]= row["ICTV_ID"]
+            hit["isolate_ID"]= row["Isolate_ID"]
+            hit["exemplar_additional"]= row["Exemplar_Additional"]
+            hit["virus_names"]= row["Virus_Names"]
+
+
+
+            #Turns empty NaN values to "Null"
+            if isinstance(row["Start_Loc"], float) and np.isnan(row["Start_Loc"]):
+                hit["start_loc"] = None
+            else:
+                hit["start_loc"] = row["Start_Loc"]
+            if isinstance(row["End_Loc"], float) and np.isnan(row["End_Loc"]):
+                hit["end_loc"] = None
+            else:
+                hit["end_loc"] = row["End_Loc"]
     
             #establishing dict in hit dict
             hit["sseqid_lineage"]= {}
@@ -193,7 +209,7 @@ for infilename in sorted(fasta_files):
 
             
 
-            #Turns empty NaN values in the Segment_Name column into "No segment name"
+            #Turns empty NaN values in the Segment_Name column into "Null"
             if isinstance(row["Segment_Name"], float) and np.isnan(row["Segment_Name"]):
                 hit["segmentname"] = None
             else:
@@ -211,8 +227,8 @@ for infilename in sorted(fasta_files):
             if blastcsv_output_filepath not in GroupedHits:
                 GroupedHits[blastcsv_output_filepath] = {
                     "input_file": infilename,
-                    "blast_csv": blastcsv_output_filepath,
-                    "blast_html": blasthtml_output_filepath,
+                    "blast_csv": re.sub(r".*/", "", blastcsv_output_filepath),  # just the filename
+                    "blast_html": re.sub(r".*/", "", blasthtml_output_filepath),
                     "status": "HITS",
                     "errors": "",
                 
