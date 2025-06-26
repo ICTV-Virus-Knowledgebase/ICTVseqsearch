@@ -97,6 +97,8 @@ GroupedHits = {}
 
 
 
+
+
 # for eden: get list of fasta files in input directory (.fa/.fna.fasta) 
 if args.verbose:
     print("Files in input directory: ", os.listdir(args.indir))
@@ -135,6 +137,9 @@ for infilename in sorted(fasta_files):
     print("Blast .csv output files:", blastcsv_output_filepath)
     db_output_html = subprocess.run(blasthtml_cmd, capture_output=True, text=True)
     print("Blast .html output files:", blasthtml_output_filepath)
+
+
+
 
     
     # read in csv file and set headers to extract data
@@ -238,21 +243,37 @@ for infilename in sorted(fasta_files):
             GroupedHits[blastcsv_output_filepath]["hits"].append(hit)
             json_hits["results"]= list(GroupedHits.values())
 
+            while json_hits["results"] is False:
 
 
-            if GroupedHits:
-                # write tsv file    
-                    pd.DataFrame(GroupedHits[blastcsv_output_filepath]["hits"]).to_csv(
-                    os.path.join(args.outdir, f"{os.path.basename(blastcsv_output_filepath)}_hits.tsv")
-                )
-                    print("Wrote tsv file: ", os.path.join(args.outdir, blastcsv_output_filepath + "_hits.tsv"))
+            
+
+            
+                del hit["sseqid_lineage"]
+
+                for src_key, target_key in rankmap.items():
+                    hit[target_key] = row[src_key]
+                    if isinstance(hit[target_key], float) and np.isnan(hit[target_key]):
+                        hit[target_key] = None
+
+
+
+
+# Write TSV file
+                pd.DataFrame(GroupedHits[blastcsv_output_filepath]["hits"]).to_csv(
+                    os.path.join(args.outdir, f"{os.path.basename(blastcsv_output_filepath)}_hits.tsv"))
+
+
+                
+                
+                
+                
+                print("Wrote tsv file: ", os.path.join(args.outdir, blastcsv_output_filepath + "_hits.tsv"))
 
 
            
         
                     
-                    
-            # print(GroupedHits[blastcsv_output_filepath]["hits"])
 
 
 
@@ -263,10 +284,6 @@ for infilename in sorted(fasta_files):
         print(blastcsv_output_filepath, "is empty and has been skipped.", "status: NO_HITS")
 
 
-    # tsv_hits = merge_dfs
-    # tsv_hits = pd.concat([tsv_hits, merge_dfs], ignore_index=True)
-    # # write tsv file
-    # tsv_hits.to_csv(os.path.join(args.outdir, "blast_results.tsv"), sep="\t", index=False)
 
 
 
@@ -283,20 +300,8 @@ for infilename in sorted(fasta_files):
             
 
 
-#    """  print("Reading fasta file: ", fasta_file_path)
-#     with open(fasta_file_path, 'r') as f:
-#         fasta_data = f.read()
-#         # parse fasta data
-#         seqs = fasta_data.split('>')[1:]  # split on '>' and ignore the first element
-#         for seq in seqs:
-#             header, sequence = seq.split('\n', 1)
-#             sequence = sequence.replace('\n', '')
-#             print("Header: ", header)
-#             print("Sequence: ", sequence) """
 
-#
-# write output/results
-#
+
 
 # Ensure the output directory exists
 os.makedirs(args.outdir, exist_ok=True)
