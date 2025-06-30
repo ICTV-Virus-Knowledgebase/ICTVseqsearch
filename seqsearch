@@ -198,11 +198,11 @@ for infilename in sorted(fasta_files):
             if isinstance(row["Start_Loc"], float) and np.isnan(row["Start_Loc"]):
                 hit["start_loc"] = None
             else:
-                hit["start_loc"] = row["Start_Loc"]
+                hit["start_loc"] = int(row["Start_Loc"])
             if isinstance(row["End_Loc"], float) and np.isnan(row["End_Loc"]):
                 hit["end_loc"] = None
             else:
-                hit["end_loc"] = row["End_Loc"]
+                hit["end_loc"] = int(row["End_Loc"])
     
             #establishing dict in hit dict
             hit["sseqid_lineage"]= {}
