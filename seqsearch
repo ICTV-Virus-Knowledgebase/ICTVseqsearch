@@ -58,6 +58,25 @@ if first_4_lines:
     first_4_lines = remove_words.strip()
 
 
+# --------------------------------------------------------------------
+# Return the “sequence” dict for qseqid inside grouped[file]
+# --------------------------------------------------------------------
+def get_sequence_wrapper(file_dict: dict, qseqid: str, blast_csv: str, blast_html: str) -> dict:
+    for seq in file_dict["sequences"]:
+        if seq["qseqid"] == qseqid:
+            return seq     # already exists
+
+    # first qseqid encounter → create wrapper
+    new_seq = {
+        "qseqid":     qseqid,
+        "blast_csv":  blast_csv,
+        "blast_html": blast_html,
+        "status":     "HITS",
+        "errors":     "",
+        "hits":       []
+    }
+    file_dict["sequences"].append(new_seq)
+    return new_seq
 
 
 
@@ -68,7 +87,7 @@ json_hits = {
     "database_title": first_4_lines,
     "input_dir": args.indir,
     "errors": "",
-    "results":[]          
+    "files":[]          
 }
 
 tsv_hits = None
@@ -174,7 +193,7 @@ for infilename in sorted(fasta_files):
             print("INTERNAL ERROR: check if your blastdb and processed_accesions table are out of sync.")
             sys.exit(1)
 
-        json_hits["results"]= list(GroupedHits.values())
+        json_hits["files"]= list(GroupedHits.values())
     
                     
         #iterate over the merged dataframe to extract the data to hit dict
@@ -229,21 +248,42 @@ for infilename in sorted(fasta_files):
             delimiter= r"[#]"
             hit["qseqid"]= re.split(delimiter, hit["qseqid"])[0]
 
-            if blastcsv_output_filepath not in GroupedHits:
-                GroupedHits[blastcsv_output_filepath] = {
-                    "input_file": infilename,
-                    "blast_csv": re.sub(r".*/", "", blastcsv_output_filepath),  # just the filename
-                    "blast_html": re.sub(r".*/", "", blasthtml_output_filepath),
-                    "status": "HITS",
-                    "errors": "",
+            # if blastcsv_output_filepath not in GroupedHits:
+            #     GroupedHits[blastcsv_output_filepath] = {
+            #         "input_file": infilename,
+            #         "blast_csv": re.sub(r".*/", "", blastcsv_output_filepath),  # just the filename
+            #         "blast_html": re.sub(r".*/", "", blasthtml_output_filepath),
+            #         "status": "HITS",
+            #         "errors": "",
                 
 
-                    "hits": []
-                }
-            GroupedHits[blastcsv_output_filepath]["hits"].append(hit)
-            json_hits["results"]= list(GroupedHits.values())
+            #         "hits": []
+            #     }
+            # GroupedHits[blastcsv_output_filepath]["hits"].append(hit)
+            # json_hits["results"]= list(GroupedHits.values())
 
-            while json_hits["results"] is False:
+            if infilename not in GroupedHits:
+                GroupedHits[infilename] = {
+                    "name":  infilename,
+                    # "database_title": "",
+                    # "errors": "",
+                    # NB – blast_csv / blast_html live at the *sequence* level now
+                    "sequences": []                # <- hierarchical list
+                }
+
+            # which sequence (== qseqid) does this hit belong to?
+            seq_wrap = get_sequence_wrapper(
+                GroupedHits[infilename],
+                qseqid = re.split(r"[#]", row["qseqid"])[0],   # plain qseqid
+                blast_csv  = blastcsv_output_filepath,
+                blast_html = blasthtml_output_filepath
+            )
+
+            # finally add the hit to *that* sequence
+            seq_wrap["hits"].append(hit)
+            json_hits["files"]= list(GroupedHits.values())
+
+            while json_hits["files"] is False:
 
 
             
