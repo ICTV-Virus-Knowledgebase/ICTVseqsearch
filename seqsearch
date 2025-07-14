@@ -59,7 +59,7 @@ if first_4_lines:
 
 
 # --------------------------------------------------------------------
-# Return the “sequence” dict for qseqid inside grouped[file]
+# Return the “sequence” dict for qseqid inside GroupedHits[file]
 # --------------------------------------------------------------------
 def get_sequence_wrapper(file_dict: dict, qseqid: str, blast_csv: str, blast_html: str) -> dict:
     for seq in file_dict["sequences"]:
@@ -248,27 +248,10 @@ for infilename in sorted(fasta_files):
             delimiter= r"[#]"
             hit["qseqid"]= re.split(delimiter, hit["qseqid"])[0]
 
-            # if blastcsv_output_filepath not in GroupedHits:
-            #     GroupedHits[blastcsv_output_filepath] = {
-            #         "input_file": infilename,
-            #         "blast_csv": re.sub(r".*/", "", blastcsv_output_filepath),  # just the filename
-            #         "blast_html": re.sub(r".*/", "", blasthtml_output_filepath),
-            #         "status": "HITS",
-            #         "errors": "",
-                
-
-            #         "hits": []
-            #     }
-            # GroupedHits[blastcsv_output_filepath]["hits"].append(hit)
-            # json_hits["results"]= list(GroupedHits.values())
-
             if infilename not in GroupedHits:
                 GroupedHits[infilename] = {
                     "name":  infilename,
-                    # "database_title": "",
-                    # "errors": "",
-                    # NB – blast_csv / blast_html live at the *sequence* level now
-                    "sequences": []                # <- hierarchical list
+                    "sequences": []
                 }
 
             # which sequence (== qseqid) does this hit belong to?
