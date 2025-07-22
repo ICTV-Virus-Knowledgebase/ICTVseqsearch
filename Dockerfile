@@ -62,7 +62,7 @@ COPY blast_test/ ./blast_test/
 #
 RUN find ./blast/
 COPY processed_accessions_b.tsv ./
-#COPY processed_accessions_a.tsv ./
+COPY processed_accessions_b.fa_names.tsv ./
 #COPY fixed_vmr_a.tsv ./
 #COPY fixed_vmr_e.tsv ./
 
