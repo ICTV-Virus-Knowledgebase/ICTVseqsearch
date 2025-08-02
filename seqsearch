@@ -4,340 +4,617 @@
 #
 
 import argparse
-import csv
+from dataclasses import asdict, dataclass
 import re
 import pandas as pd
 import json
 import os
 import sys
 import subprocess
-import glob
+#import glob
 import numpy as np
-#
-# parse ARGS
-#
-parser = argparse.ArgumentParser(description="")
-parser.add_argument('-verbose',help="print details during run",action=argparse.BooleanOptionalAction)
-parser.add_argument('-indir',help="directory for fasta files with NUCLEOTIDE seqeunces to classify",default="seq_in")
-parser.add_argument('-outdir',help="output directory for tax_results.json",default="tax_out")
-parser.add_argument('-json',help="output json filename",default="tax_results.json")
-parser.add_argument('-html',help="output  html base filename",default="tax_results")
-parser.add_argument('-blastdb',help="input blast base filename",default="./blast/ICTV_VMR_b")
-parser.add_argument('-db', help="BLAST database file", default="blast/ICTV_VMR_b")
-parser.add_argument('-info', action='store_true', help="Display BLAST database info")
+from typing import Dict, List
 
-args = parser.parse_args()
+from pathlib import Path
+from Bio import SeqIO
 
-print("Hello World")
-print("IN_DIR: ", args.indir)
-print("OUT_DIR:", args.outdir)
-print("OUT_JSON:", args.json)
-print("OUT_HTML:", args.html)
+#---------------------------------------------------------------------------------------------------
+# Class definitions
+#---------------------------------------------------------------------------------------------------
 
-#
-# read version number
-#
-with open("version_git.txt") as verfile:
-    git_version = verfile.readline().strip()
-print("VERSION:", git_version )
+@dataclass
+class BlastHit():
+   bitscore: float
+   end_loc: int | None
+   evalue: float | None
+   exemplar_additional: str | None
+   ictv_id: str | None
+   input_seq: str
+   isolate_id: str | None
+   qseqid: str
+   segmentname: str | None
+   sseqid: str | None
+   sseqid_accession: str | None
 
-#System command to get blast db info "blastdbcmd -db blast/ICTV_VMR_b -info"
-db_title_command = ["blastdbcmd", "-db", args.db, "-info"]
-db_title_output = subprocess.run(db_title_command, capture_output=True, text=True, check=True)
-
-#Split the output into lines and take the first 4 lines with splicing
-db_title_len= db_title_output.stdout.splitlines()
-first_4_lines = db_title_len[:4]
-# Joins the first 4 lines by the tab characters
-if first_4_lines:
-    first_4_lines= "\t".join(first_4_lines)
-    #Removes any tabs in the first 4 lines and replaces them with a single space
-    remove_tabs = re.sub(r'\t+', ' ', first_4_lines)
-    first_4_lines = remove_tabs.strip()
-    remove_words= first_4_lines[9:]  # remove the first 9 characters "Database: "
-    first_4_lines = remove_words.strip()
+   # The dict keys are realm, subrealm, kingdom, subkingdom, phylum, subphylum, class, subclass, order, suborder, family, subfamily, genus, subgenus, and species.
+   sseqid_lineage: Dict[str, str]
+   
+   start_loc: int | None
+   virus_names: str | None
 
 
-# --------------------------------------------------------------------
-# Return the “sequence” dict for qseqid inside GroupedHits[file]
-# --------------------------------------------------------------------
-def get_sequence_wrapper(file_dict: dict, qseqid: str, blast_csv: str, blast_html: str) -> dict:
-    for seq in file_dict["sequences"]:
-        if seq["qseqid"] == qseqid:
-            return seq     # already exists
+@dataclass
+class SequenceData():
+   blast_csv: str
+   blast_html: str
+   errors: List[str]
+   hits: List[BlastHit]
+   input_file: str
+   qseqid: str
+   status: str
 
-    # first qseqid encounter → create wrapper
-    new_seq = {
-        "qseqid":     qseqid,
-        "blast_csv":  blast_csv,
-        "blast_html": blast_html,
-        "status":     "HITS",
-        "errors":     "",
-        "hits":       []
-    }
-    file_dict["sequences"].append(new_seq)
-    return new_seq
+@dataclass
+class FileData():
+   errors: List[str]
+   name: str
+   sequences: List[SequenceData]
 
+@dataclass
+class SearchResults():
+   database_name: str
+   database_title: str
+   errors: str
+   files: List[FileData]
+   input_dir: str
+   program_name: str
+   version: str         
 
+@dataclass
+class Settings():
+   blastdb: str
+   db: str
+   html: str
+   indir: str
+   json_filename: str
+   outdir: str
+   verbose: bool
 
-json_hits = {
-    "program_name": os.path.basename(sys.argv[0]),
-    "version"  : git_version,
-    "database_name": args.blastdb,
-    "database_title": first_4_lines,
-    "input_dir": args.indir,
-    "errors": "",
-    "files":[]          
-}
+# FASTA files with more than 1 sequence are split into multiple FASTA files with one sequence each.
+class SplitFilename():
+   fasta: str
+   input: str
 
-tsv_hits = None
+   # C-tor
+   def __init__(self, fasta_: str, input_: str):
+      self.fasta = fasta_
+      self.input = input_
+   
+
+#---------------------------------------------------------------------------------------------------
+# Global variable definitions
+#---------------------------------------------------------------------------------------------------
+
+# Columns in the BLAST CSV file.
+CSV_COLUMNS = ["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"]
+
+# Valid extensions for input FASTA files.
+FASTA_FILE_EXTENSIONS = [".fa", ".fna", ".fasta"]
+
+# A dictionary for input file data.
+file_data_lookup: Dict[str, FileData] = {}
+
+# parsed_data_df is df for the processed_accessions_b.tsv file
+parsed_data_df: pd.DataFrame
+
+PROCESSED_ACCESSIONS_FILENAME = "processed_accessions_b.fa_names.tsv"
 
 rankmap = {
-    "Realm": "realm",
-    "Family": "family",
-    "Subfamily": "subfamily",
-    "Phylum": "phylum",
-    "Class": "class",
-    "Order": "order",
-    "Genus": "genus",
-    "Species": "species",
-    "Kingdom": "kingdom",
-    "Subkingdom": "subkingdom",
-    "Subphylum": "subphylum",
-    "Subrealm": "subrealm",
-    "Subclass": "subclass",
-    "Suborder": "suborder",
-    "Subgenus": "subgenus",
+   "Realm": "realm",
+   "Family": "family",
+   "Subfamily": "subfamily",
+   "Phylum": "phylum",
+   "Class": "class",
+   "Order": "order",
+   "Genus": "genus",
+   "Species": "species",
+   "Kingdom": "kingdom",
+   "Subkingdom": "subkingdom",
+   "Subphylum": "subphylum",
+   "Subrealm": "subrealm",
+   "Subclass": "subclass",
+   "Suborder": "suborder",
+   "Subgenus": "subgenus"
 }
 
-
-GroupedHits = {}
-
-
+# The search results that will be converted to a JSON output file.
+search_results: SearchResults
 
 
+#---------------------------------------------------------------------------------------------------
+# Function definitions
+#---------------------------------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------------------------------
+# Create a BLAST hit object using a data row.
+#---------------------------------------------------------------------------------------------------
+def create_blast_hit(fasta_basename: str, row: pd.Series, row_index: int) -> BlastHit:
+
+   bitscore = row["bitscore"]
+   if isinstance(bitscore, float) and np.isnan(bitscore):
+      bitscore = 0
+
+   end_loc = row["End_Loc"]
+   if isinstance(end_loc, float) and np.isnan(end_loc):
+      end_loc = None
+   else:
+      end_loc = int(end_loc)
+
+   evalue = row["evalue"]
+
+   exemplar_additional = row["Exemplar_Additional"]
+   if isinstance(exemplar_additional, float) and np.isnan(exemplar_additional):
+      exemplar_additional = None
+   else:
+      exemplar_additional = str(exemplar_additional)
+
+   ictv_id = row["ICTV_ID"]
+   if isinstance(ictv_id, float) and np.isnan(ictv_id):
+      ictv_id = None
+   else:
+      ictv_id = str(ictv_id)
+
+   isolate_id = row["Isolate_ID"]
+   if isinstance(isolate_id, float) and np.isnan(isolate_id):
+      isolate_id = None
+   else:
+      isolate_id = str(isolate_id)
+
+   input_seq = fasta_basename
+
+   qseqid = row["qseqid"]
+   if isinstance(qseqid, float) and np.isnan(qseqid):
+      error_message = f"Error: Invalid qseqid is NaN in row {row_index} of {fasta_basename}"
+      raise ValueError(error_message)
+   else:
+      qseqid = str(qseqid)
+   
+   # Split the qseqid row into two parts to just show the qseqid without everything after the first #
+   delimiter= r"[#]"
+   qseqid = re.split(delimiter, qseqid)[0]
+
+   segment_name = row["Segment_Name"]
+   if isinstance(segment_name, float) and np.isnan(segment_name):
+      segment_name = None
+   else:
+      segment_name = str(segment_name)
+
+   sseqid = row["sseqid"]
+   if isinstance(sseqid, float) and np.isnan(sseqid):
+      sseqid = None
+   else:
+      sseqid = str(sseqid)
+
+   start_loc = row["Start_Loc"]
+   if isinstance(start_loc, float) and np.isnan(start_loc):
+      start_loc = None
+   else:
+      start_loc = int(start_loc)
+
+   virus_names = row["Virus_Names"]
+   if isinstance(row["Virus_Names"], float) and np.isnan(row["Virus_Names"]):
+      virus_names = None
+
+   # Add the lineage information to the hit.
+   sseqid_lineage = {}
+
+   for src_key, target_key in rankmap.items():
+
+      taxon = row[src_key]
+      if isinstance(taxon, float) and np.isnan(taxon):
+         taxon = None
+
+      sseqid_lineage[target_key] = taxon
+
+   # Use the sseqid to generate the sseqid_accession.
+   if sseqid:
+      sseqid_accession = sseqid.replace(sseqid.rsplit("-", 1)[0] + "-", "")
+   else:
+      sseqid_accession = None
+
+   return BlastHit(
+      bitscore = bitscore,
+      end_loc = end_loc,
+      evalue = evalue,
+      exemplar_additional = exemplar_additional,
+      ictv_id = ictv_id,
+      input_seq = input_seq,
+      isolate_id = isolate_id,
+      qseqid = qseqid,
+      segmentname = segment_name,
+      sseqid = sseqid,
+      sseqid_accession = sseqid_accession,
+      sseqid_lineage = sseqid_lineage,
+      start_loc = start_loc,
+      virus_names = virus_names
+   )
 
 
-# for eden: get list of fasta files in input directory (.fa/.fna.fasta) 
-if args.verbose:
-    print("Files in input directory: ", os.listdir(args.indir))
-# get list of fasta files
-fasta_files = []
-for  infilename in os.listdir(args.indir):
-    if infilename.endswith(".fa") or infilename.endswith(".fna") or infilename.endswith(".fasta"):
-            fasta_files.append (infilename)
-print("FASTA files found: ", fasta_files)
+#---------------------------------------------------------------------------------------------------
+# Create the JSON output file using search_results.
+#---------------------------------------------------------------------------------------------------
+def create_json_file() -> None:
 
- #parsed_data_df is df for the processed_accessions_b.tsv file
-parsed_data_df= pd.read_csv("processed_accessions_b.fa_names.tsv", sep="\t", header=0)
+   global search_results
 
+   try:
+      # json job output/summary
+      json_outpath = os.path.join(settings.outdir, settings.json_filename)
+      with open(json_outpath, "w") as outfile:
+         json.dump(obj=asdict(search_results), fp=outfile, indent=4)
+      print("Wrote: ", json_outpath)
+      outfile.close()
 
-# iterate over fasta files
-for infilename in sorted(fasta_files):
-    # read in fasta file
-    print("\n\n----------------------------------------------------------------------")
-    print("Processing fasta file: ", infilename)
-    fasta_file_path = os.path.join(args.indir, infilename)
-    #create output file paths
-    blastasn_output_filepath= os.path.join(args.outdir, infilename + ".asn")
-    blastcsv_output_filepath= os.path.join(args.outdir, infilename + ".csv")
-    blasthtml_output_filepath= os.path.join(args.outdir, infilename + ".html")
-
-    #blast output format commands.
-
-    blastasn_cmd = ["blastn", "-db", args.blastdb , "-query", fasta_file_path , "-out", blastasn_output_filepath, "-outfmt", "11"]
-    blastcsv_cmd = ["blast_formatter", "-archive", blastasn_output_filepath , "-out", blastcsv_output_filepath, "-outfmt", "10"]
-    blasthtml_cmd = ["blast_formatter", "-archive", blastasn_output_filepath,  "-out", blasthtml_output_filepath, "-html" ]
-    print("ASN Format Command:", " ".join(blastasn_cmd), "\n", "CSV Format Command:", " ".join(blastcsv_cmd), "\n", "HTML Format Command:", " ".join(blasthtml_cmd))
-
-    db_output_asn = subprocess.run(blastasn_cmd, capture_output=True, text=True)
-    print("Blast .asn output files:", blastasn_output_filepath)
-    db_output_csv = subprocess.run(blastcsv_cmd, capture_output=True, text=True)
-    print("Blast .csv output files:", blastcsv_output_filepath)
-    db_output_html = subprocess.run(blasthtml_cmd, capture_output=True, text=True)
-    print("Blast .html output files:", blasthtml_output_filepath)
+   except Exception as e:
+      print(f"Error writing JSON file: {e}")
+      sys.exit(1)
 
 
+#---------------------------------------------------------------------------------------------------
+# Use blastdbcmd to determine the BLAST database title.
+#---------------------------------------------------------------------------------------------------
+def get_database_title() -> str:
+
+   #System command to get blast db info "blastdbcmd -db blast/ICTV_VMR_b -info"
+   db_title_command = ["blastdbcmd", "-db", settings.db, "-info"]
+   db_title_output = subprocess.run(db_title_command, capture_output=True, text=True, check=True)
+
+   #Split the output into lines and take the first 4 lines with splicing
+   db_title_len = db_title_output.stdout.splitlines()
+   first_4_lines = db_title_len[:4]
+
+   title = ""
+
+   # Joins the first 4 lines by the tab characters
+   if first_4_lines:
+      title = " ".join(first_4_lines)
+      title = title.strip()
+      title = title[9:]  # remove the first 9 characters "Database: "
+      title = title.strip()
+   
+   return title
 
 
+#---------------------------------------------------------------------------------------------------
+# Get the version number
+#---------------------------------------------------------------------------------------------------
+def get_git_version() -> str:
     
-    # read in csv file and set headers to extract data
+   git_version = ""
+
+   try:
+      with open("version_git.txt") as verfile:
+         git_version = verfile.readline().strip()
+
+      print("VERSION:", git_version )
+
+   except Exception as e:
+      print(f"Error writing JSON file: {e}")
+      sys.exit(1)
+   
+   return git_version
+
+
+#---------------------------------------------------------------------------------------------------
+# The main / entry point function.
+#---------------------------------------------------------------------------------------------------
+def main() -> None:
+
+   global parsed_data_df
+   global search_results
+
+   # Get the BLAST database title and git version.
+   db_title = "test title" # get_database_title()
+   version = get_git_version()
+
+   # Initialize the search results that will be converted to a JSON output file.
+   search_results = SearchResults(
+      database_name = str(settings.blastdb),
+      database_title = db_title,
+      errors = "",
+      files = [],
+      input_dir = settings.indir,
+      program_name = os.path.basename(sys.argv[0]),
+      version = version
+   )
+   
+   # parsed_data_df is df for the processed_accessions_b.tsv file
+   parsed_data_df = pd.read_csv(PROCESSED_ACCESSIONS_FILENAME, sep="\t", header=0)
+   if (parsed_data_df.empty):
+      print(f"Error: {PROCESSED_ACCESSIONS_FILENAME} is empty or not found.")
+      sys.exit(1)
+
+   # Iterate over FASTA input files and split files with multiple sequences.
+   split_filenames = split_input_files()
+   if not split_filenames or len(split_filenames) < 1:
+      print("Error: No FASTA files were found for processing")
+      sys.exit(1)
+
+   # Process all FASTA files
+   for split_filename in split_filenames:
+      process_fasta_file(split_filename.fasta, split_filename.input)
+
+   # Add the file data lookup to the search results as a list.
+   for filename in file_data_lookup:
+
+      # Get the associated file data.
+      file_data = file_data_lookup[filename]
+
+      # Add it to the search results.
+      search_results.files.append(file_data)
+
+   # Create the JSON output file using search_results.
+   create_json_file()
+
+
+#---------------------------------------------------------------------------------------------------
+# Process a single FASTA file and update the search results.
+#---------------------------------------------------------------------------------------------------
+def process_fasta_file(fasta_filename: str, input_filename: str) -> None:
+
+   global parsed_data_df
+   
+   # Get the file's basename without extension and the Path as a string.
+   fasta_basename = fasta_filename.rsplit('.', 1)[0]
+
+   # Try to get the input file's data in json_results. If it hasn't been added yet,
+   # create a new input file data object.
+   if input_filename in file_data_lookup:
+      input_file_data = file_data_lookup[input_filename]
+   else:
+      input_file_data = FileData(
+         errors = [],
+         name = input_filename,
+         sequences = []
+      )
+      
+   try:
+      # Run blastn on the FASTA file and generate ASN, CSV, and HTML output files.
+      run_blast(fasta_basename)
+
+   except RuntimeError as e:
+      print(str(e))
+
+      # Update the input file's errors and add it back to the file data lookup.
+      input_file_data.errors.append(str(e))
+      file_data_lookup[input_filename] = input_file_data
+      return
+
+   # The output file paths for the blast results.
+   blastcsv_output_filepath = f"{settings.outdir}/{fasta_filename}.csv"
+   blasthtml_output_filepath = f"{settings.outdir}/{fasta_filename}.html"
+
+   # Create a sequence data object.
+   sequence_data = SequenceData(
+      blast_csv = blastcsv_output_filepath,
+      blast_html = blasthtml_output_filepath,
+      errors = [],
+      hits = [],
+      input_file = fasta_filename,
+      qseqid = "",
+      status = ""
+   )
+
+   # Keep track of the number of hits.
+   hitCount = 0
+
+   try:
+      # Read in csv file and set headers to extract data. Process the file only if it's successfully read.
+      df = pd.read_csv(blastcsv_output_filepath, header=None, names=CSV_COLUMNS)
+      print("Loading output file", blastcsv_output_filepath)
+      print("Number of rows in blast csv file: ", len(df))
+      print("Number of rows in processed_accessions_b.tsv file: ", len(parsed_data_df))
+      if settings.verbose: 
+         print(df)
+         print(parsed_data_df)
+
+      # initializing the sBaseAccession column in df that is used for joining
+      df["sBaseAccession"] = df["sseqid"].astype(str).str.replace(r'^.*-(\w[^.]*)\..*$', r'\1',regex=True)
+      print(df["sBaseAccession"])
+
+      # merging the two dataframes by the sBaseAccession column and the Accession column
+      merge_dfs = pd.merge(df, parsed_data_df, left_on="sBaseAccession", right_on= "Accession", how="left")
+      if settings.verbose: print(merge_dfs)
+
+      # check if some blast results didn't match known accessions
+      merge_missing = merge_dfs["Species"].isna().sum()
+      if merge_missing > 0:
+
+         # Generate an error message and print it.
+         error_message = f"INTERNAL ERROR: {merge_missing} out of {len(df)} sseqid.base_accession's didn't match to processed_accessions table. Check if your blastdb and processed_accesions table are out of sync."
+         print(error_message)
+
+         # Update the input file's errors.
+         input_file_data.errors.append(error_message)
+
+      if len(df) < len(merge_dfs):
+
+         # Generate an error message and print it.
+         error_message = "INTERNAL ERROR: merging blast results to processed_accessions added extra rows. Check if your blastdb and processed_accesions table are out of sync."
+         print(error_message)
+
+         # Update the input file's errors and add it back to the file data lookup.
+         input_file_data.errors.append(error_message)
+         file_data_lookup[input_filename] = input_file_data
+         return
+
+      # TODO: How does status get populated???
+
+      # iterate over the merged dataframe to extract the data to hit dict
+      for index, row in merge_dfs.iterrows():
+         
+         hit = create_blast_hit(fasta_basename, row, hitCount)
+
+         # The qseqid is the same for all of these BLAST hits, so use the first one.
+         if hitCount == 0:
+            sequence_data.qseqid = hit.qseqid
+
+         # Add the BLAST hit to the sequence data.
+         sequence_data.hits.append(hit)
+
+         hitCount += 1
+
+         # TODO: Are we supposed to write a TSV file?
+         # Write TSV file
+         #pd.DataFrame(GroupedHits[blastcsv_output_filepath]["hits"]).to_csv(
+         #   os.path.join(args.outdir, f"{os.path.basename(blastcsv_output_filepath)}_hits.tsv"))
+
+         #print("Wrote tsv file: ", os.path.join(args.outdir, blastcsv_output_filepath + "_hits.tsv"))
+
+   except pd.errors.EmptyDataError:
+      print(blastcsv_output_filepath, "is empty and has been skipped.", "status: NO_HITS")
+
+   # Determine the sequence data's status.
+   if hitCount > 0:
+      sequence_data.status = "HITS"
+   else:
+      sequence_data.status = "NO_HITS"
+
+   # Add the sequence data to the input file data.
+   input_file_data.sequences.append(sequence_data)
+
+   # Add the input file data to the file data lookup.
+   file_data_lookup[input_filename] = input_file_data
+
+
+# Run blastn on a FASTA file and generate ASN, CSV, and HTML output files.
+def run_blast(fasta_filename: str):
+
+   print("\n\n----------------------------------------------------------------------")
+   print("Processing FASTA file: ", fasta_filename)
+   
+   # Create file names/paths for the output files.
+   blastasn_output_filepath = f"{settings.outdir}/{fasta_filename}.asn"
+   blastcsv_output_filepath = f"{settings.outdir}{fasta_filename}.csv"
+   blasthtml_output_filepath = f"{settings.outdir}{fasta_filename}.html"
+
+   # The FASTA file's full path.
+   fasta_path = f"{settings.indir}/{fasta_filename}"
+
+   try:
+      blastasn_cmd = ["blastn", "-db", settings.blastdb, "-query", fasta_path, "-out", blastasn_output_filepath, "-outfmt", "11"]
+      
+      # Run blastn on the FASTA file and generate ASN, CSV, and HTML output files.
+      subprocess.run(blastasn_cmd, capture_output=True, text=True, check=True)
+
+      print("Blast .asn output files:", blastasn_output_filepath)
+
+   except subprocess.CalledProcessError as e:
+      raise RuntimeError(f"Error running blastn command:\n{e.stderr}")
+
+   try:
+      blastcsv_cmd = ["blast_formatter", "-archive", str(blastasn_output_filepath), "-out", blastcsv_output_filepath, "-outfmt", "10"]
+
+      # Generate the CSV output file.
+      subprocess.run(blastcsv_cmd, capture_output=True, text=True, check=True)
+
+      print("Blast .csv output files:", blastcsv_output_filepath)
+
+   except subprocess.CalledProcessError as e:
+      raise RuntimeError(f"Error running blast_formatter (CSV) command:\n{e.stderr}")
+
+   try:
+      blasthtml_cmd = ["blast_formatter", "-archive", blastasn_output_filepath, "-out", blasthtml_output_filepath, "-html"]
+      
+      # Generate the HTML output file.
+      subprocess.run(blasthtml_cmd, capture_output=True, text=True, check=True)
+
+      print("Blast .html output files:", blasthtml_output_filepath)
+
+   except subprocess.CalledProcessError as e:
+      raise RuntimeError(f"Error running blast_formatter (HTML) command:\n{e.stderr}")
+   
+
+#---------------------------------------------------------------------------------------------------
+# Split FASTA files when there is more than one sequence in the file.
+#---------------------------------------------------------------------------------------------------
+def split_input_files() -> list[SplitFilename] | None:
+   
+   filenames: list[SplitFilename] = []
+
+   # Create a path object from the input directory path.
+   input_directory = Path(settings.indir)
+   
+   for input_file in input_directory.iterdir():
+
+      if input_file.suffix.lower() not in FASTA_FILE_EXTENSIONS:
+         continue
+
+      # "fasta" tells biopython to read fasta format
+      sequences = list(SeqIO.parse(input_file, "fasta"))
+      print(f"Found {len(sequences)} sequences in {input_file.name}")
+
+      # Do not split if only one record
+      if len(sequences) == 1:
+         filenames.append(SplitFilename(input_file.name, input_file.name))
+         continue
+
+      # Iterate over all sequences in the FASTA file.
+      for s, sequence in enumerate(sequences, start=1):
+
+         # Create a filename for this sequence's FASTA.
+         new_filename =f"{input_file.stem}_{s}{input_file.suffix}"
+         new_path = input_directory / new_filename
+
+         # Create the new FASTA file and populate it with the single sequence.
+         SeqIO.write(sequence, new_path, "fasta")
+
+         # Add the filename information to the list of all filenames.
+         filenames.append(SplitFilename(new_filename, input_file.name))
+
+   return filenames
+
+
+
+if __name__ == "__main__" :
+
+   #
+   # parse ARGS
+   #
+
+   # TODO: add "dest=" and "required=" to all args.
+   parser = argparse.ArgumentParser(description="")
+   parser.add_argument('-verbose',help="print details during run",action=argparse.BooleanOptionalAction)
+   parser.add_argument('-indir',help="directory for fasta files with NUCLEOTIDE seqeunces to classify",default="seq_in")
+   parser.add_argument('-outdir',help="output directory for tax_results.json",default="tax_out")
+   parser.add_argument('-json',help="output json filename",default="tax_results.json")
+   parser.add_argument('-html',help="output html base filename",default="tax_results")
+   parser.add_argument('-blastdb',help="input blast base filename",default="./blast/ICTV_VMR_b")
+   parser.add_argument('-db', help="BLAST database file", default="blast/ICTV_VMR_b")
+   parser.add_argument('-info', action='store_true', help="Display BLAST database info")
+
+   args = parser.parse_args()
+
+   print("IN_DIR: ", args.indir)
+   print("OUT_DIR:", args.outdir)
+   print("OUT_JSON:", args.json)
+   print("OUT_HTML:", args.html)
+
+   # Ensure the output directory exists
+   os.makedirs(args.outdir, exist_ok=True)
+
+   # Initialize settings
+   settings = Settings(
+      blastdb = args.blastdb,
+      db = args.db,
+      html = args.html,
+      indir = args.indir,
+      json_filename = args.json,
+      outdir = args.outdir,
+      verbose = args.verbose
+   )
+
+   # Call the main function to begin processing.
+   main()
     
-    try:
-        raw_data = pd.read_csv(blastcsv_output_filepath)
-        # Process the file only if it's successfully read
-        #df is df for the blast csv file
-        
-
-        df = pd.read_csv(blastcsv_output_filepath, header=None, names=["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"])
-        print( "Loading output file", blastcsv_output_filepath)
-        print( "Number of rows in blast csv file: ", len(df))
-        if args.verbose: print(df)
-        
-        print("Number of rows in processed_accessions_b.tsv file: ", len(parsed_data_df))
-        #initializes the sBaseAccession column in df that is used for joining
-        df["sBaseAccession"]= df["sseqid"].astype(str).str.replace(r'^.*-(\w[^.]*)\..*$', r'\1',regex=True)
-        print(df["sBaseAccession"])
-        #merging the two dataframes by the sBaseAccession column and the Accession column
-        merge_dfs= pd.merge(df,parsed_data_df, left_on="sBaseAccession", right_on= "Accession", how="left")
-        if args.verbose: print(merge_dfs)
-
-        # check if some blast results didn't match to known accessions
-        merge_missing = merge_dfs["Species"].isna().sum()
-        if merge_missing > 0: 
-            print(f"INTERNAL ERROR: {merge_missing} out of {len(df)} sseqid.base_accession's didn't match to processed_accessions table.")
-            print("INTERNAL ERROR: check if your blastdb and processed_accesions table are out of sync.")
-
-        if len(df) < len(merge_dfs):
-            print("INTERNAL ERROR: merging blast results to processed_accessions added extra rows.")
-            print("INTERNAL ERROR: check if your blastdb and processed_accesions table are out of sync.")
-            sys.exit(1)
-
-        json_hits["files"]= list(GroupedHits.values())
-    
-                    
-        #iterate over the merged dataframe to extract the data to hit dict
-        for index, row in merge_dfs.iterrows():
-            
-        
-            hit= {}           # append to hit
-            hit["input_seq"] = infilename.split(".")[0]
-            hit["evalue"]= row["evalue"]
-            hit["bitscore"]= row["bitscore"]
-            hit["qseqid"]= row["qseqid"]
-            hit["sseqid"]= row["sseqid"]
-            hit["ICTV_ID"]= row["ICTV_ID"]
-            hit["isolate_ID"]= row["Isolate_ID"]
-            hit["exemplar_additional"]= row["Exemplar_Additional"]
-            hit["virus_names"]= row["Virus_Names"]
-
-
-
-            #Turns empty NaN values to "Null"
-            if isinstance(row["Start_Loc"], float) and np.isnan(row["Start_Loc"]):
-                hit["start_loc"] = None
-            else:
-                hit["start_loc"] = int(row["Start_Loc"])
-            if isinstance(row["End_Loc"], float) and np.isnan(row["End_Loc"]):
-                hit["end_loc"] = None
-            else:
-                hit["end_loc"] = int(row["End_Loc"])
-    
-            #establishing dict in hit dict
-            hit["sseqid_lineage"]= {}
-            for src_key, target_key in rankmap.items():
-                hit["sseqid_lineage"][target_key] = row[src_key]
-
-                if isinstance(hit["sseqid_lineage"][target_key], float) and np.isnan(hit["sseqid_lineage"].get(target_key)):
-                    hit["sseqid_lineage"][target_key] = None
-
-            
-
-            #Turns empty NaN values in the Segment_Name column into "Null"
-            if isinstance(row["Segment_Name"], float) and np.isnan(row["Segment_Name"]):
-                hit["segmentname"] = None
-            else:
-                hit["segmentname"] = row["Segment_Name"]
-            #splitting the sseqid row into two parts
-            if row["sseqid"]:
-                hit["sseqid_accession"] = row["sseqid"].replace(row["sseqid"].rsplit("-", 1)[0] + "-", "")
-
-           
-
-            #splitting the qseqid row into two parts to just show the qseqid without everything after the first #
-            delimiter= r"[#]"
-            hit["qseqid"]= re.split(delimiter, hit["qseqid"])[0]
-
-            if infilename not in GroupedHits:
-                GroupedHits[infilename] = {
-                    "name":  infilename,
-                    "sequences": []
-                }
-
-            # which sequence (== qseqid) does this hit belong to?
-            seq_wrap = get_sequence_wrapper(
-                GroupedHits[infilename],
-                qseqid = re.split(r"[#]", row["qseqid"])[0],   # plain qseqid
-                blast_csv  = blastcsv_output_filepath,
-                blast_html = blasthtml_output_filepath
-            )
-
-            # finally add the hit to *that* sequence
-            seq_wrap["hits"].append(hit)
-            json_hits["files"]= list(GroupedHits.values())
-
-            while json_hits["files"] is False:
-
-
-            
-
-            
-                del hit["sseqid_lineage"]
-
-                for src_key, target_key in rankmap.items():
-                    hit[target_key] = row[src_key]
-                    if isinstance(hit[target_key], float) and np.isnan(hit[target_key]):
-                        hit[target_key] = None
-
-
-
-
-# Write TSV file
-                pd.DataFrame(GroupedHits[blastcsv_output_filepath]["hits"]).to_csv(
-                    os.path.join(args.outdir, f"{os.path.basename(blastcsv_output_filepath)}_hits.tsv"))
-
-
-                
-                
-                
-                
-                print("Wrote tsv file: ", os.path.join(args.outdir, blastcsv_output_filepath + "_hits.tsv"))
-
-
-           
-        
-                    
-
-
-
-            
-            
-            
-    except pd.errors.EmptyDataError:
-        print(blastcsv_output_filepath, "is empty and has been skipped.", "status: NO_HITS")
-
-
-
-
-
-
-
-        
-
-
-            
-            
-            
-    
-    
-            
-
-
-
-
-
-# Ensure the output directory exists
-os.makedirs(args.outdir, exist_ok=True)
-
-# json job output/summary
-json_outpath=os.path.join(args.outdir, args.json)
-with open(json_outpath, "w") as outfile:
-    json.dump(obj=json_hits, fp=outfile, indent=4)
-print("Wrote: ", json_outpath)
-outfile.close()
-
-
-
-exit(0)
-
+   exit(0)
 
