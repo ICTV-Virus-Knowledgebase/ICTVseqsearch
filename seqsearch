@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# taxonomically classify a novel nucleotide sequence
+# Taxonomically classify a novel nucleotide sequence
 #
 
 import argparse
@@ -11,17 +11,17 @@ import json
 import os
 import sys
 import subprocess
-#import glob
 import numpy as np
 from typing import Dict, List
-
 from pathlib import Path
 from Bio import SeqIO
+
 
 #---------------------------------------------------------------------------------------------------
 # Class definitions
 #---------------------------------------------------------------------------------------------------
 
+# Data provided by BLAST results.
 @dataclass
 class BlastHit():
    bitscore: float
@@ -36,13 +36,13 @@ class BlastHit():
    sseqid: str | None
    sseqid_accession: str | None
 
-   # The dict keys are realm, subrealm, kingdom, subkingdom, phylum, subphylum, class, subclass, order, suborder, family, subfamily, genus, subgenus, and species.
+   # Note: The dict keys are realm, subrealm, kingdom, subkingdom, phylum, subphylum, class, subclass, order, suborder, family, subfamily, genus, subgenus, and species.
    sseqid_lineage: Dict[str, str]
    
    start_loc: int | None
    virus_names: str | None
 
-
+# Metadata for a single FASTA sequence. 
 @dataclass
 class SequenceData():
    blast_csv: str
@@ -53,12 +53,15 @@ class SequenceData():
    qseqid: str
    status: str
 
+# This represents a FASTA input file that was uploaded by the user. Note that "generated" FASTA files 
+# that contain sequences split from an uploaded input file are not included in FileData.
 @dataclass
 class FileData():
    errors: List[str]
    name: str
    sequences: List[SequenceData]
 
+# The SeqSearch results that are saved as a JSON output file.
 @dataclass
 class SearchResults():
    database_name: str
@@ -69,6 +72,7 @@ class SearchResults():
    program_name: str
    version: str         
 
+# When this module is called from the command line, the settings are populated from command line arguments.
 @dataclass
 class Settings():
    blastdb: str
@@ -81,7 +85,12 @@ class Settings():
 
 # FASTA files with more than 1 sequence are split into multiple FASTA files with one sequence each.
 class SplitFilename():
+
+   # The name of the file that contains a sequence from the uploaded FASTA input file. For uploaded  
+   # input files with a single sequence, the input filename is used for both "fasta" and "input" attributes.
    fasta: str
+
+   # The filename of the uploaded FASTA input file.
    input: str
 
    # C-tor
@@ -91,7 +100,7 @@ class SplitFilename():
    
 
 #---------------------------------------------------------------------------------------------------
-# Global variable definitions
+# "Constant" definitions
 #---------------------------------------------------------------------------------------------------
 
 # Columns in the BLAST CSV file.
@@ -99,12 +108,6 @@ CSV_COLUMNS = ["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "q
 
 # Valid extensions for input FASTA files.
 FASTA_FILE_EXTENSIONS = [".fa", ".fna", ".fasta"]
-
-# A dictionary for input file data.
-file_data_lookup: Dict[str, FileData] = {}
-
-# parsed_data_df is df for the processed_accessions_b.tsv file
-parsed_data_df: pd.DataFrame
 
 PROCESSED_ACCESSIONS_FILENAME = "processed_accessions_b.fa_names.tsv"
 
@@ -125,6 +128,17 @@ rankmap = {
    "Suborder": "suborder",
    "Subgenus": "subgenus"
 }
+
+
+#---------------------------------------------------------------------------------------------------
+# Global variable definitions
+#---------------------------------------------------------------------------------------------------
+
+# A dictionary for input file data.
+file_data_lookup: Dict[str, FileData] = {}
+
+# parsed_data_df is df for the processed_accessions_b.tsv file
+parsed_data_df: pd.DataFrame
 
 # The search results that will be converted to a JSON output file.
 search_results: SearchResults
@@ -486,7 +500,9 @@ def process_fasta_file(fasta_filename: str, input_filename: str) -> None:
    file_data_lookup[input_filename] = input_file_data
 
 
+#---------------------------------------------------------------------------------------------------
 # Run blastn on a FASTA file and generate ASN, CSV, and HTML output files.
+#---------------------------------------------------------------------------------------------------
 def run_blast(fasta_filename: str):
 
    print("\n\n----------------------------------------------------------------------")
