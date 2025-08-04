@@ -313,7 +313,7 @@ def main() -> None:
    global search_results
 
    # Get the BLAST database title and git version.
-   db_title = "test title" # get_database_title()
+   db_title = get_database_title()
    version = get_git_version()
 
    # Initialize the search results that will be converted to a JSON output file.
