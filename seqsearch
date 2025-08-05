@@ -393,7 +393,7 @@ def process_fasta_file(fasta_filename: str, input_filename: str) -> None:
       
    try:
       # Run blastn on the FASTA file and generate ASN, CSV, and HTML output files.
-      run_blast(fasta_basename)
+      run_blast(fasta_filename)
 
    except RuntimeError as e:
       print(str(e))
