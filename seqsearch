@@ -284,8 +284,6 @@ def get_database_title() -> str:
 
    # System command to get blast db info "blastdbcmd -db blast/ICTV_VMR_b -info"
    db_title_command = ["blastdbcmd", "-db", settings.db, "-info"]
-   print("\n"," ".join(db_title_command))
-   
    db_title_output = subprocess.run(db_title_command, capture_output=True, text=True, check=True)
 
    #Split the output into lines and take the first 4 lines with splicing
@@ -315,7 +313,7 @@ def get_git_version() -> str:
       with open("version_git.txt") as verfile:
          git_version = verfile.readline().strip()
 
-      print("VERSION:", git_version)
+      print("Version: ", git_version)
 
    except Exception as e:
       print(f"Error writing JSON file: {e}")
@@ -434,18 +432,18 @@ def process_fasta_file(fasta_filename: str, input_filename: str) -> None:
       df = pd.read_csv(blastcsv_output_filepath, header=None, names=CSV_COLUMNS)
 
       print(f"\nLoading CSV file {blastcsv_output_filepath}")
-      print("\tNumber of rows: ", len(df))
-      print(f"\tNumber of rows in {PROCESSED_ACCESSIONS_FILENAME}: ",len(parsed_data_df))
+      print("Number of rows: ", len(df))
+      print(f"Number of rows in {PROCESSED_ACCESSIONS_FILENAME}: ",len(parsed_data_df))
       if settings.verbose: 
          print("\nCSV data:")
          print(df,"\n")
 
-         print("\n{PROCESSED_ACCESSIONS_FILENAME} data:")
+         print(f"\n{PROCESSED_ACCESSIONS_FILENAME} data:")
          print(parsed_data_df,"\n")
 
       # initializing the sBaseAccession column in df that is used for joining
       df["sBaseAccession"] = df["sseqid"].astype(str).str.replace(r'^.*-(\w[^.]*)\..*$', r'\1',regex=True)
-      print(df["sBaseAccession"])
+      print("\n", df["sBaseAccession"])
 
       # merging the two dataframes by the sBaseAccession column and the Accession column
       merge_dfs = pd.merge(df, parsed_data_df, left_on="sBaseAccession", right_on= "Accession", how="left")
@@ -497,7 +495,7 @@ def process_fasta_file(fasta_filename: str, input_filename: str) -> None:
          #print("Wrote tsv file: ", os.path.join(args.outdir, blastcsv_output_filepath + "_hits.tsv"))
 
    except pd.errors.EmptyDataError:
-      print(blastcsv_output_filepath, "is empty and has been skipped.", "status: NO_HITS")
+      print(blastcsv_output_filepath, " is empty and has been skipped. ", "status: NO_HITS")
 
    # Determine the sequence data's status.
    if hitCount > 0:
@@ -529,7 +527,7 @@ def run_blast(fasta_filename: str):
 
    try:
       blastasn_cmd = ["blastn", "-db", settings.blastdb, "-query", fasta_path, "-out", blastasn_output_filepath, "-outfmt", "11"]
-      print("\t"," ".join(blastasn_cmd))
+      print(" ".join(blastasn_cmd))
       
       # Run blastn on the FASTA file and generate an ASN file.
       subprocess.run(blastasn_cmd, capture_output=True, text=True, check=True)
@@ -539,7 +537,7 @@ def run_blast(fasta_filename: str):
 
    try:
       blastcsv_cmd = ["blast_formatter", "-archive", str(blastasn_output_filepath), "-out", blastcsv_output_filepath, "-outfmt", "10"]
-      print("\t"," ".join(blastcsv_cmd))
+      print(" ".join(blastcsv_cmd))
 
       # Generate the CSV output file.
       subprocess.run(blastcsv_cmd, capture_output=True, text=True, check=True)
@@ -549,7 +547,7 @@ def run_blast(fasta_filename: str):
 
    try:
       blasthtml_cmd = ["blast_formatter", "-archive", blastasn_output_filepath, "-out", blasthtml_output_filepath, "-html"]
-      print("\t"," ".join(blasthtml_cmd))
+      print(" ".join(blasthtml_cmd))
 
       # Generate the HTML output file.
       subprocess.run(blasthtml_cmd, capture_output=True, text=True, check=True)
@@ -582,7 +580,7 @@ def split_input_files() -> list[SplitFilename] | None:
 
       # "fasta" tells biopython to read fasta format
       sequences = list(SeqIO.parse(input_file, "fasta"))
-      print(f"\tFound {len(sequences)} sequences in {input_file.name}")
+      print(f"Found {len(sequences)} sequences in {input_file.name}")
 
       # Don't split the file if only has one sequence.
       if len(sequences) == 1:
