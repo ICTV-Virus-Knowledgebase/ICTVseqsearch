@@ -45,7 +45,7 @@ conda activate conda/vmr_openpyxl3
 ./seqsearch -indir test_data/one_seq -out test_out/one_seq
 
 # compare results to expected
-diff -w -u test_out/one_seq/tax_results.json test_out/one_seq/tax_results.json.good |dwdiff -u --color
+diff -w -u test_out/one_seq/tax_results.json.good test_out/one_seq/tax_results.json|dwdiff -u --color
 ```
 
 <h2>Usage - VMR_to_fasta.py</h3>
