@@ -10,6 +10,7 @@ import pandas as pd
 import json
 import os
 import sys
+import shutil
 import subprocess
 import numpy as np
 from typing import Dict, List
@@ -110,6 +111,9 @@ CSV_COLUMNS = ["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "q
 FASTA_FILE_EXTENSIONS = [".fa", ".fna", ".fasta"]
 
 PROCESSED_ACCESSIONS_FILENAME = "processed_accessions_b.fa_names.tsv"
+
+# A subdirectory of the input directory for FASTA files containing a single sequence.
+SEQUENCE_FILES_DIR = "sequence_files"
 
 rankmap = {
    "Realm": "realm",
@@ -514,7 +518,7 @@ def run_blast(fasta_filename: str):
    blasthtml_output_filepath = f"{settings.outdir}{fasta_filename}.html"
 
    # The FASTA file's full path.
-   fasta_path = f"{settings.indir}/{fasta_filename}"
+   fasta_path = f"{settings.indir}/{SEQUENCE_FILES_DIR}/{fasta_filename}"
 
    try:
       blastasn_cmd = ["blastn", "-db", settings.blastdb, "-query", fasta_path, "-out", blastasn_output_filepath, "-outfmt", "11"]
@@ -560,6 +564,11 @@ def split_input_files() -> list[SplitFilename] | None:
    # Create a path object from the input directory path.
    input_directory = Path(settings.indir)
    
+   # Create the SEQUENCE_FILES_DIR subdirectory.
+   seq_files_path = input_directory / SEQUENCE_FILES_DIR
+   seq_files_path.mkdir(exist_ok=True)
+
+   # Iterate over all files in the input directory.
    for input_file in input_directory.iterdir():
 
       if input_file.suffix.lower() not in FASTA_FILE_EXTENSIONS:
@@ -569,9 +578,12 @@ def split_input_files() -> list[SplitFilename] | None:
       sequences = list(SeqIO.parse(input_file, "fasta"))
       print(f"Found {len(sequences)} sequences in {input_file.name}")
 
-      # Do not split if only one record
+      # Don't split the file if only has one sequence.
       if len(sequences) == 1:
          filenames.append(SplitFilename(input_file.name, input_file.name))
+
+         # Copy the file to the sequence_files subdirectory.
+         shutil.copy2(input_file, seq_files_path / input_file.name)
          continue
 
       # Iterate over all sequences in the FASTA file.
@@ -579,7 +591,7 @@ def split_input_files() -> list[SplitFilename] | None:
 
          # Create a filename for this sequence's FASTA.
          new_filename =f"{input_file.stem}_{s}{input_file.suffix}"
-         new_path = input_directory / new_filename
+         new_path = seq_files_path / new_filename
 
          # Create the new FASTA file and populate it with the single sequence.
          SeqIO.write(sequence, new_path, "fasta")
