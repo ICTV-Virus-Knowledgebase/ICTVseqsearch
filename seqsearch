@@ -269,7 +269,7 @@ def create_json_file() -> None:
       json_outpath = os.path.join(settings.outdir, settings.json_filename)
       with open(json_outpath, "w") as outfile:
          json.dump(obj=asdict(search_results), fp=outfile, indent=4)
-      print("Wrote: ", json_outpath)
+      print("\nCreated JSON output file: ", json_outpath)
       outfile.close()
 
    except Exception as e:
