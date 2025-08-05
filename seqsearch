@@ -282,8 +282,10 @@ def create_json_file() -> None:
 #---------------------------------------------------------------------------------------------------
 def get_database_title() -> str:
 
-   #System command to get blast db info "blastdbcmd -db blast/ICTV_VMR_b -info"
+   # System command to get blast db info "blastdbcmd -db blast/ICTV_VMR_b -info"
    db_title_command = ["blastdbcmd", "-db", settings.db, "-info"]
+   print("\n"," ".join(db_title_command))
+   
    db_title_output = subprocess.run(db_title_command, capture_output=True, text=True, check=True)
 
    #Split the output into lines and take the first 4 lines with splicing
@@ -313,7 +315,7 @@ def get_git_version() -> str:
       with open("version_git.txt") as verfile:
          git_version = verfile.readline().strip()
 
-      print("VERSION:", git_version, "\n")
+      print("VERSION:", git_version)
 
    except Exception as e:
       print(f"Error writing JSON file: {e}")
@@ -381,9 +383,7 @@ def process_fasta_file(fasta_filename: str, input_filename: str) -> None:
 
    global parsed_data_df
    
-   print("\n----------------------------------------------------------------------")
-   print(f"Processing FASTA file {fasta_filename} (input file: {input_filename})")
-   print("----------------------------------------------------------------------")
+   print(f"\nProcessing FASTA file {fasta_filename} (input file: {input_filename})")
    
    # Get the file's basename without extension and the Path as a string.
    fasta_basename = fasta_filename.rsplit('.', 1)[0]
@@ -433,13 +433,14 @@ def process_fasta_file(fasta_filename: str, input_filename: str) -> None:
       # Read in csv file and set headers to extract data. Process the file only if it's successfully read.
       df = pd.read_csv(blastcsv_output_filepath, header=None, names=CSV_COLUMNS)
 
-      print("\n----------------------------------------------------------------------")
-      print(f"Loading CSV file {blastcsv_output_filepath}")
-      print("----------------------------------------------------------------------")
-      print("Number of rows: ", len(df))
-      print("Number of rows in processed_accessions_b.tsv file: ",len(parsed_data_df))
+      print(f"\nLoading CSV file {blastcsv_output_filepath}")
+      print("\tNumber of rows: ", len(df))
+      print(f"\tNumber of rows in {PROCESSED_ACCESSIONS_FILENAME}: ",len(parsed_data_df))
       if settings.verbose: 
+         print("\nCSV data:")
          print(df,"\n")
+
+         print("\n{PROCESSED_ACCESSIONS_FILENAME} data:")
          print(parsed_data_df,"\n")
 
       # initializing the sBaseAccession column in df that is used for joining
@@ -516,9 +517,7 @@ def process_fasta_file(fasta_filename: str, input_filename: str) -> None:
 #---------------------------------------------------------------------------------------------------
 def run_blast(fasta_filename: str):
 
-   print("\n----------------------------------------------------------------------")
-   print(f"Running blastn on {fasta_filename}")
-   print("----------------------------------------------------------------------")
+   print(f"\nRunning blastn on {fasta_filename}")
    
    # Create file names/paths for the output files.
    blastasn_output_filepath = f"{settings.outdir}/{fasta_filename}.asn"
@@ -530,7 +529,7 @@ def run_blast(fasta_filename: str):
 
    try:
       blastasn_cmd = ["blastn", "-db", settings.blastdb, "-query", fasta_path, "-out", blastasn_output_filepath, "-outfmt", "11"]
-      print(" ".join(blastasn_cmd))
+      print("\t"," ".join(blastasn_cmd))
       
       # Run blastn on the FASTA file and generate an ASN file.
       subprocess.run(blastasn_cmd, capture_output=True, text=True, check=True)
@@ -540,7 +539,7 @@ def run_blast(fasta_filename: str):
 
    try:
       blastcsv_cmd = ["blast_formatter", "-archive", str(blastasn_output_filepath), "-out", blastcsv_output_filepath, "-outfmt", "10"]
-      print(" ".join(blastcsv_cmd))
+      print("\t"," ".join(blastcsv_cmd))
 
       # Generate the CSV output file.
       subprocess.run(blastcsv_cmd, capture_output=True, text=True, check=True)
@@ -550,7 +549,7 @@ def run_blast(fasta_filename: str):
 
    try:
       blasthtml_cmd = ["blast_formatter", "-archive", blastasn_output_filepath, "-out", blasthtml_output_filepath, "-html"]
-      print(" ".join(blasthtml_cmd))
+      print("\t"," ".join(blasthtml_cmd))
 
       # Generate the HTML output file.
       subprocess.run(blasthtml_cmd, capture_output=True, text=True, check=True)
@@ -564,9 +563,7 @@ def run_blast(fasta_filename: str):
 #---------------------------------------------------------------------------------------------------
 def split_input_files() -> list[SplitFilename] | None:
    
-   print("\n----------------------------------------------------------------------")
-   print("Splitting input file(s)")
-   print("----------------------------------------------------------------------")
+   print("\nSplitting input file(s)")
 
    filenames: list[SplitFilename] = []
 
@@ -585,7 +582,7 @@ def split_input_files() -> list[SplitFilename] | None:
 
       # "fasta" tells biopython to read fasta format
       sequences = list(SeqIO.parse(input_file, "fasta"))
-      print(f"Found {len(sequences)} sequences in {input_file.name}")
+      print(f"\tFound {len(sequences)} sequences in {input_file.name}")
 
       # Don't split the file if only has one sequence.
       if len(sequences) == 1:
