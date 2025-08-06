@@ -522,6 +522,9 @@ def run_blast(fasta_filename: str):
    blastcsv_output_filepath = f"{settings.outdir}/{fasta_filename}.csv"
    blasthtml_output_filepath = f"{settings.outdir}/{fasta_filename}.html"
 
+   print(f"CSV output path: {blastcsv_output_filepath}")
+   print(f"HTML output path: {blasthtml_output_filepath}")
+
    # The FASTA file's full path.
    fasta_path = f"{settings.indir}/{SEQUENCE_FILES_DIR}/{fasta_filename}"
 
@@ -537,11 +540,15 @@ def run_blast(fasta_filename: str):
 
    # Generate the CSV output file.
    try:
-      output_format = f"10 {' '.join(CSV_COLUMNS)}"
-      blastcsv_cmd = ["blast_formatter", "-archive", str(blastasn_output_filepath), "-out", blastcsv_output_filepath, "-outfmt", output_format, "-show_header"]
+      blastcsv_cmd = ["blast_formatter", "-archive", str(blastasn_output_filepath), "-out", blastcsv_output_filepath, "-outfmt", "10"]
       print(" ".join(blastcsv_cmd))
 
       subprocess.run(blastcsv_cmd, capture_output=True, text=True, check=True)
+
+      # Add a header row to the CSV file.
+      df = pd.read_csv(blastcsv_output_filepath, header=None)
+      df.columns = CSV_COLUMNS
+      df.to_csv(blastcsv_output_filepath, index=False)
 
    except subprocess.CalledProcessError as e:
       raise RuntimeError(f"Error running blast_formatter (CSV) command:\n{e.stderr}")
