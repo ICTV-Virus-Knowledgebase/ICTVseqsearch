@@ -537,7 +537,7 @@ def run_blast(fasta_filename: str):
 
    # Generate the CSV output file.
    try:
-      output_format = f"10 {" ".join(CSV_COLUMNS)}"
+      output_format = f"10 {' '.join(CSV_COLUMNS)}"
       blastcsv_cmd = ["blast_formatter", "-archive", str(blastasn_output_filepath), "-out", blastcsv_output_filepath, "-outfmt", output_format, "-show_header"]
       print(" ".join(blastcsv_cmd))
 
