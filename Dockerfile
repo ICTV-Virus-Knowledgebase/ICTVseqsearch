@@ -25,12 +25,15 @@ RUN set -e \
         apt-transport-https apt-utils ca-certificates locales pandoc pkg-config \
         ssh rsync \
 	ncbi-blast+ \
+	python3 \
+	python3-pip \
 	python3-pandas \
       && apt-get -y autoremove \
       && apt-get clean \
       && rm -rf /var/lib/apt/lists/*
 
 # install python packages
+RUN pip install --no-cache-dir biopython
 #RUN pip install numpy
 #RUN pip install pandas
 
@@ -62,7 +65,7 @@ COPY blast_test/ ./blast_test/
 #
 RUN find ./blast/
 COPY processed_accessions_b.tsv ./
-#COPY processed_accessions_a.tsv ./
+COPY processed_accessions_b.fa_names.tsv ./
 #COPY fixed_vmr_a.tsv ./
 #COPY fixed_vmr_e.tsv ./
 
@@ -74,6 +77,6 @@ COPY test_out/one_seq/ ./test_out/one_seq/
 
 # what does ENTRYPOINT do exactly?
 # ENTRYPOINT fixed the base command; immutable
-ENTRYPOINT [ "./seqsearch" ]
+#ENTRYPOINT [ "./seqsearch" ]
 # CMD add default cmds/arguments
-#CMD [ "./seqsearch" ]
+CMD [ "./seqsearch" ]
