@@ -25,6 +25,7 @@ parser.add_argument('-html',help="output  html base filename",default="tax_resul
 parser.add_argument('-blastdb',help="input blast base filename",default="./blast/ICTV_VMR_b")
 parser.add_argument('-db', help="BLAST database file", default="blast/ICTV_VMR_b")
 parser.add_argument('-info', action='store_true', help="Display BLAST database info")
+parser.add_argument('-f', '--fasta', help="Input fasta file", default=None)
 
 args = parser.parse_args()
 
