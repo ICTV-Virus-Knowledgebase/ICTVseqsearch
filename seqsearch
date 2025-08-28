@@ -108,7 +108,7 @@ class SplitFilename():
 CSV_COLUMNS = ["qseqid", "sseqid", "pident", "length", "mismatch", "gapopen", "qstart", "qend", "sstart", "send", "evalue", "bitscore"]
 
 # Valid extensions for input FASTA files.
-FASTA_FILE_EXTENSIONS = [".fa", ".fna", ".fasta"]
+FASTA_FILE_EXTENSIONS = [".fa", ".fas", ".fasta", ".ffn", ".fna", ".frn", ".fsa", ".seq", ".txt"]
 
 PROCESSED_ACCESSIONS_FILENAME = "processed_accessions_b.fa_names.tsv"
 
