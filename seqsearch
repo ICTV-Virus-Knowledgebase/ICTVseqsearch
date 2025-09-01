@@ -15,7 +15,7 @@ import subprocess
 import numpy as np
 from typing import Dict, List
 from pathlib import Path
-from Bio import SeqIO
+from Bio import SeqIO, SeqRecord
 
 
 #---------------------------------------------------------------------------------------------------
@@ -54,6 +54,7 @@ class SequenceData():
    hits: List[BlastHit]
    input_file: str
    qseqid: str
+   sequence_length: int
    status: str
 
 # This represents a FASTA input file that was uploaded by the user. Note that "generated" FASTA files 
@@ -87,19 +88,23 @@ class Settings():
    verbose: bool
 
 # FASTA files with more than 1 sequence are split into multiple FASTA files with one sequence each.
-class SplitFilename():
+class SequenceFile():
 
    # The name of the file that contains a sequence from the uploaded FASTA input file. For uploaded  
-   # input files with a single sequence, the input filename is used for both "fasta" and "input" attributes.
-   fasta: str
+   # input files with a single sequence, the input filename is used for both names.
+   filename: str
 
    # The filename of the uploaded FASTA input file.
-   input: str
+   input_filename: str
+
+   # The length of the FASTA sequence in the file "fasta".
+   sequence_length: int
 
    # C-tor
-   def __init__(self, fasta_: str, input_: str):
-      self.fasta = fasta_
-      self.input = input_
+   def __init__(self, fasta_: str, input_: str, sequence_length_: int):
+      self.filename = fasta_
+      self.input_filename = input_
+      self.sequence_length = sequence_length_
    
 
 #---------------------------------------------------------------------------------------------------
@@ -367,7 +372,7 @@ def main() -> None:
 
    # Process all FASTA files
    for split_filename in split_filenames:
-      process_fasta_file(split_filename.fasta, split_filename.input)
+      process_fasta_file(split_filename.filename, split_filename.input_filename, split_filename.sequence_length)
 
    # Add the file data lookup to the search results as a list.
    for filename in file_data_lookup:
@@ -385,7 +390,7 @@ def main() -> None:
 #---------------------------------------------------------------------------------------------------
 # Process a single FASTA file and update the search results.
 #---------------------------------------------------------------------------------------------------
-def process_fasta_file(fasta_filename: str, input_filename: str) -> None:
+def process_fasta_file(fasta_filename: str, input_filename: str, sequence_length: int) -> None:
 
    global parsed_data_df
    
@@ -429,6 +434,7 @@ def process_fasta_file(fasta_filename: str, input_filename: str) -> None:
       hits = [],
       input_file = input_filename,
       qseqid = "",
+      sequence_length = sequence_length,
       status = ""
    )
 
@@ -575,11 +581,11 @@ def run_blast(fasta_filename: str):
 #---------------------------------------------------------------------------------------------------
 # Split FASTA files when there is more than one sequence in the file.
 #---------------------------------------------------------------------------------------------------
-def split_input_files() -> list[SplitFilename] | None:
+def split_input_files() -> list[SequenceFile] | None:
    
    print("\nSplitting input file(s)")
 
-   filenames: list[SplitFilename] = []
+   filenames: list[SequenceFile] = []
 
    # Create a path object from the input directory path.
    input_directory = Path(settings.indir)
@@ -591,16 +597,27 @@ def split_input_files() -> list[SplitFilename] | None:
    # Iterate over all files in the input directory.
    for input_file in input_directory.iterdir():
 
+      # Make sure the file has a valid extension for a FASTA file.
       if input_file.suffix.lower() not in FASTA_FILE_EXTENSIONS:
          continue
 
-      # "fasta" tells biopython to read fasta format
-      sequences = list(SeqIO.parse(input_file, "fasta"))
+      # Parse the input file for FASTA sequences.
+      sequences: list[SeqRecord.SeqRecord] = list(SeqIO.parse(input_file, "fasta"))
+      if sequences is None or len(sequences) < 1:
+         continue
+
       print(f"Found {len(sequences)} sequences in {input_file.name}")
 
       # Don't split the file if only has one sequence.
       if len(sequences) == 1:
-         filenames.append(SplitFilename(input_file.name, input_file.name))
+
+         # Get the length of the single sequence.
+         sequence = sequences[0]
+         if sequence is None or sequence.seq is None:
+            continue
+
+         # Add a "split filename" object for the input file.
+         filenames.append(SequenceFile(input_file.name, input_file.name, len(sequence.seq)))
 
          # Copy the file to the sequence_files subdirectory.
          shutil.copy2(input_file, seq_files_path / input_file.name)
@@ -609,15 +626,18 @@ def split_input_files() -> list[SplitFilename] | None:
       # Iterate over all sequences in the FASTA file.
       for s, sequence in enumerate(sequences, start=1):
 
+         if sequence is None or sequence.seq is None:
+            continue
+
          # Create a filename for this sequence's FASTA.
-         new_filename =f"{input_file.stem}_{s}{input_file.suffix}"
+         new_filename = f"{input_file.stem}_{s}{input_file.suffix}"
          new_path = seq_files_path / new_filename
 
          # Create the new FASTA file and populate it with the single sequence.
          SeqIO.write(sequence, new_path, "fasta")
 
          # Add the filename information to the list of all filenames.
-         filenames.append(SplitFilename(new_filename, input_file.name))
+         filenames.append(SequenceFile(new_filename, input_file.name, len(sequence.seq)))
 
    return filenames
 
